@@ -22,6 +22,7 @@ import org.apache.isis.client.kroviz.to.Argument
 import org.apache.isis.client.kroviz.to.Link
 import org.apache.isis.client.kroviz.to.TObject
 import org.apache.isis.client.kroviz.ui.core.Constants
+import org.apache.isis.client.kroviz.ui.core.SessionManager
 import org.apache.isis.client.kroviz.ui.core.UiManager
 
 object StringUtils {
@@ -64,9 +65,10 @@ object StringUtils {
         return if (input == outputWithoutWhiteSpace) input else output
     }
 
-    fun shortTitle(url: String, protocolHostPort: String): String {
-        var title = url
+    fun shortTitle(url: String): String {
         val signature = Constants.restInfix
+        val protocolHostPort = url.split(signature).first()
+        var title = url
         if (title.contains(signature)) {
             // strip off protocol, host, port
             title = title.replace(protocolHostPort + signature, "")
@@ -227,7 +229,7 @@ object StringUtils {
         val signature = Constants.restInfix
         if (url.contains(signature)) {
             // strip off protocol, host, port
-            val protocolHostPort = UiManager.getBaseUrl()
+            val protocolHostPort = SessionManager.getBaseUrl()
             result = result.replace(protocolHostPort + signature, "")
             result = StringUtils.removeHexCode(result)
         }

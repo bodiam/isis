@@ -22,26 +22,22 @@ import org.apache.isis.client.kroviz.core.event.LogEntry
 import org.apache.isis.client.kroviz.core.event.ResourceSpecification
 import org.apache.isis.client.kroviz.to.ValueType
 import org.apache.isis.client.kroviz.to.bs3.Grid
-import org.apache.isis.client.kroviz.ui.core.Constants
-import org.apache.isis.client.kroviz.ui.core.FormItem
-import org.apache.isis.client.kroviz.ui.core.RoDialog
-import org.apache.isis.client.kroviz.ui.core.UiManager
+import org.apache.isis.client.kroviz.ui.core.*
 import org.apache.isis.client.kroviz.ui.diagram.JsonDiagram
 import org.apache.isis.client.kroviz.ui.diagram.LayoutDiagram
 import org.apache.isis.client.kroviz.ui.diagram.LinkTreeDiagram
-import org.apache.isis.client.kroviz.utils.Flatted
+import org.apache.isis.client.kroviz.utils.js.Flatted
 import org.apache.isis.client.kroviz.utils.StringUtils
 import org.apache.isis.client.kroviz.utils.XmlHelper
 
-class EventLogDetail(val logEntryFromTabulator: LogEntry) : Command() {
+class EventLogDetail(logEntryFromTabulator: LogEntry) : Controller() {
     private var logEntry: LogEntry
-    private lateinit var dialog: RoDialog
 
     init {
         // For a yet unknown reason, aggregators are not transmitted via tabulator.
-        // As a WORKAROUND, we fetch the full blown LogEntry from the EventStore again.
+        // As a WORKAROUND, we fetch the full-blown LogEntry from the EventStore again.
         val rs = ResourceSpecification(logEntryFromTabulator.title)
-        logEntry = UiManager.getEventStore().findBy(rs) ?: logEntryFromTabulator  // in case of xml, we use the entry passed in
+        logEntry = SessionManager.getEventStore().findBy(rs) ?: logEntryFromTabulator  // in case of xml, we use the entry passed in
     }
 
     // callback parameter
@@ -49,7 +45,7 @@ class EventLogDetail(val logEntryFromTabulator: LogEntry) : Command() {
     private val LNK: String = "lnk"
     private val DPM: String = "dpm"
 
-    fun open() {
+    override fun open() {
         val responseStr = if (logEntry.subType == Constants.subTypeJson) {
             StringUtils.format(logEntry.response)
         } else {
@@ -69,11 +65,11 @@ class EventLogDetail(val logEntryFromTabulator: LogEntry) : Command() {
         dialog = RoDialog(
                 caption = "Details :" + logEntry.title,
                 items = formItems,
-                command = this,
+                controller = this,
                 defaultAction = "Response Diagram",
                 widthPerc = 60,
                 customButtons = customButtons)
-        dialog.open()
+        super.open()
     }
 
     override fun execute(action: String?) {
@@ -90,7 +86,7 @@ class EventLogDetail(val logEntryFromTabulator: LogEntry) : Command() {
             }
             else -> {
                 console.log(logEntry)
-                console.log("Action not defined yet: " + action)
+                console.log("Action not defined yet: $action")
             }
         }
     }

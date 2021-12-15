@@ -23,6 +23,7 @@ import javax.jdo.annotations.Column;
 import javax.jdo.annotations.Discriminator;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Query;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import org.apache.isis.applib.IsisModuleApplib;
 import org.apache.isis.applib.annotation.DomainObject;
@@ -35,7 +36,10 @@ import org.apache.isis.applib.events.lifecycle.ObjectPersistingEvent;
 import org.apache.isis.applib.events.lifecycle.ObjectRemovingEvent;
 import org.apache.isis.applib.events.lifecycle.ObjectUpdatedEvent;
 import org.apache.isis.applib.events.lifecycle.ObjectUpdatingEvent;
+import org.apache.isis.applib.jaxb.PersistentEntityAdapter;
 import org.apache.isis.testdomain.model.stereotypes.MyService;
+import org.apache.isis.testdomain.util.dto.BookDto;
+import org.apache.isis.testdomain.util.dto.IBook;
 import org.apache.isis.testdomain.util.kv.KVStoreForTesting;
 
 import lombok.AccessLevel;
@@ -78,11 +82,13 @@ import lombok.extern.log4j.Log4j2;
               + "FROM org.apache.isis.testdomain.jdo.entities.JdoBook "
               + "WHERE price <= :priceUpperBound")
 
-
+@XmlJavaTypeAdapter(PersistentEntityAdapter.class)
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @ToString(callSuper = true)
 @Log4j2
-public class JdoBook extends JdoProduct {
+public class JdoBook
+extends JdoProduct
+implements IBook {
 
     // -- DOMAIN EVENTS
     public static class ActionDomainEvent extends IsisModuleApplib.ActionDomainEvent<JdoBook> {};
@@ -114,11 +120,6 @@ public class JdoBook extends JdoProduct {
     }
     // --
 
-    @Override
-    public String title() {
-        return toString();
-    }
-
     public static JdoBook of(
             final String name,
             final String description,
@@ -128,6 +129,16 @@ public class JdoBook extends JdoProduct {
             final String publisher) {
 
         return new JdoBook(name, description, price, author, isbn, publisher);
+    }
+
+    public static JdoBook fromDto(final BookDto dto) {
+       return JdoBook.of(dto.getName(), dto.getDescription(), dto.getPrice(),
+               dto.getAuthor(), dto.getIsbn(), dto.getPublisher());
+    }
+
+    @Override
+    public String title() {
+        return IBook.super.title();
     }
 
     @Property

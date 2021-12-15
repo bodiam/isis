@@ -21,12 +21,11 @@ package org.apache.isis.client.kroviz.ui.dialog
 import org.apache.isis.client.kroviz.to.ValueType
 import org.apache.isis.client.kroviz.ui.core.FormItem
 import org.apache.isis.client.kroviz.ui.core.RoDialog
-import org.apache.isis.client.kroviz.ui.core.RoStatusBar
 import org.apache.isis.client.kroviz.ui.core.UiManager
 
-class NotificationDialog(val message: String) : Command() {
+class NotificationDialog(val message: String) : Controller() {
 
-    fun open() {
+    override fun open() {
         val formItems = mutableListOf<FormItem>()
         val fi = FormItem("Message", ValueType.TEXT_AREA, message, size = 5)
         fi.readOnly = true
@@ -35,7 +34,7 @@ class NotificationDialog(val message: String) : Command() {
         RoDialog(
                 caption = label,
                 items = formItems,
-                command = this,
+                controller = this,
                 widthPerc = 80).open()
     }
 

@@ -26,17 +26,17 @@ import org.apache.isis.client.kroviz.ui.core.RoDialog
 import io.kvision.core.StringPair
 import io.kvision.form.select.SimpleSelect
 import org.apache.isis.client.kroviz.ui.core.FormItem
+import org.apache.isis.client.kroviz.ui.core.SessionManager
 import org.apache.isis.client.kroviz.ui.core.UiManager
 
-class EventImportDialog() : Command() {
+class EventImportDialog : Controller() {
 
-    private lateinit var form: RoDialog
     private var output: String = ""
     val formItems = mutableListOf<FormItem>()
     val events = mutableListOf<ReplayEvent>()
 
     private fun collectReplayEvents() {
-        UiManager.getEventStore().log.forEach { it ->
+        SessionManager.getEventStore().log.forEach {
             val re = buildExportEvent(it)
             when (it.state) {
                 EventState.SUCCESS_JS -> events.add(re)
@@ -67,8 +67,7 @@ class EventImportDialog() : Command() {
             else -> {
             }
         }
-        val format = extractUserInput("Format")
-        when (format) {
+        when (extractUserInput("Format")) {
             "CSV" -> {
                 output = asCsv(events)
                 fileName += ".csv"
@@ -84,7 +83,7 @@ class EventImportDialog() : Command() {
     }
 
     private fun extractUserInput(fieldName: String): String? {
-        val formPanel = form.formPanel
+        val formPanel = dialog.formPanel
         val kids = formPanel!!.getChildren()
         //iterate over FormItems (0,1) but not Buttons(2,3)
         for (i in kids) {
@@ -102,7 +101,7 @@ class EventImportDialog() : Command() {
     }
 
     private fun collectUnfinishedEvents() {
-        UiManager.getEventStore().log.forEach { it ->
+        SessionManager.getEventStore().log.forEach {
             val re = buildExportEvent(it)
             when (it.state) {
                 EventState.RUNNING -> events.add(re)
@@ -114,13 +113,13 @@ class EventImportDialog() : Command() {
     }
 
     private fun collectAllEvents() {
-        UiManager.getEventStore().log.forEach { it ->
+        SessionManager.getEventStore().log.forEach {
             val re = buildExportEvent(it)
             events.add(re)
         }
     }
 
-    fun open() {
+    override fun open() {
         val format = mutableListOf<StringPair>()
         format.add(StringPair("CSV", "CSV"))
         format.add(StringPair("JSON", "JSON"))
@@ -131,8 +130,8 @@ class EventImportDialog() : Command() {
         filter.add(StringPair("UNFINISHED", "Unfinished"))
         formItems.add(FormItem("Filter", ValueType.SIMPLE_SELECT, filter))
 
-        form = RoDialog(caption = "Export", items = formItems, command = this)
-        form.open()
+        dialog = RoDialog(caption = "Export", items = formItems, controller = this)
+        super.open()
     }
 
     private fun asCsv(events: MutableList<ReplayEvent>): String {

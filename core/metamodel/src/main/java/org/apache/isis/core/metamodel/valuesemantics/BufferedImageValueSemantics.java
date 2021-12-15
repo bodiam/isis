@@ -26,8 +26,10 @@ import javax.inject.Named;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
-import org.apache.isis.applib.adapters.ValueSemanticsAbstract;
-import org.apache.isis.applib.adapters.EncoderDecoder;
+import org.apache.isis.applib.value.semantics.EncoderDecoder;
+import org.apache.isis.applib.value.semantics.OrderRelation;
+import org.apache.isis.applib.value.semantics.ValueSemanticsAbstract;
+import org.apache.isis.commons.collections.Can;
 import org.apache.isis.commons.internal.base._Strings;
 import org.apache.isis.commons.internal.image._Images;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
@@ -40,6 +42,7 @@ public class BufferedImageValueSemantics
 extends ValueSemanticsAbstract<BufferedImage>
 implements
     ImageValueSemantics,
+    OrderRelation<BufferedImage, Void>,
     EncoderDecoder<BufferedImage> {
 
     @Override
@@ -50,6 +53,23 @@ implements
     @Override
     public ValueType getSchemaValueType() {
         return UNREPRESENTED;
+    }
+
+    // -- ORDER RELATION
+
+    @Override
+    public Void epsilon() {
+        return null; // not used
+    }
+
+    @Override
+    public int compare(final BufferedImage a, final BufferedImage b, final Void epsilon) {
+        return _Images.compare(a, b);
+    }
+
+    @Override
+    public boolean equals(final BufferedImage a, final BufferedImage b, final Void epsilon) {
+        return compare(a, b, epsilon) == 0;
     }
 
     // -- ENCODER DECODER
@@ -100,5 +120,11 @@ implements
         /*sonar-ignore-off*/
     }
 
+    @Override
+    public Can<BufferedImage> getExamples() {
+        return Can.of(
+                new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB),
+                new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB));
+    }
 
 }

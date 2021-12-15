@@ -24,12 +24,13 @@ import java.util.stream.Stream;
 import org.springframework.lang.Nullable;
 
 import org.apache.isis.applib.Identifier;
-import org.apache.isis.applib.adapters.EncoderDecoder;
-import org.apache.isis.applib.adapters.Parser;
-import org.apache.isis.applib.adapters.Renderer;
-import org.apache.isis.applib.adapters.ValueSemanticsProvider;
-import org.apache.isis.applib.adapters.ValueSemanticsProvider.Context;
 import org.apache.isis.applib.id.LogicalType;
+import org.apache.isis.applib.value.semantics.EncoderDecoder;
+import org.apache.isis.applib.value.semantics.OrderRelation;
+import org.apache.isis.applib.value.semantics.Parser;
+import org.apache.isis.applib.value.semantics.Renderer;
+import org.apache.isis.applib.value.semantics.ValueSemanticsProvider;
+import org.apache.isis.applib.value.semantics.ValueSemanticsProvider.Context;
 import org.apache.isis.commons.collections.Can;
 import org.apache.isis.core.metamodel.facetapi.Facet;
 import org.apache.isis.core.metamodel.spec.feature.ObjectActionParameter;
@@ -51,6 +52,11 @@ public interface ValueFacet<T> extends Facet {
     Can<ValueSemanticsProvider<T>> getValueSemantics();
     Context createValueSemanticsContext(@Nullable ObjectFeature feature);
     <X> Stream<X> streamValueSemantics(Class<X> requiredType);
+
+    // -- ORDER RELATION
+
+    /** no qualifiers allowed on the default semantics provider*/
+    Optional<OrderRelation<T, ?>> selectDefaultOrderRelation();
 
     // -- ENCODER DECODER
 

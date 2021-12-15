@@ -18,50 +18,29 @@
  */
 package org.apache.isis.viewer.wicket.ui.components.scalars.passwd;
 
-import org.apache.wicket.markup.ComponentTag;
 import org.apache.wicket.markup.html.form.AbstractTextComponent;
-import org.apache.wicket.markup.html.form.PasswordTextField;
 
 import org.apache.isis.applib.value.Password;
 import org.apache.isis.viewer.wicket.model.models.ScalarModel;
-import org.apache.isis.viewer.wicket.ui.components.scalars.ScalarPanelTextFieldParseableAbstract;
-import org.apache.isis.viewer.wicket.ui.components.scalars.TextFieldStringModel;
-
-import de.agilecoders.wicket.core.util.Attributes;
+import org.apache.isis.viewer.wicket.ui.components.scalars.ScalarPanelTextFieldWithValueSemanticsAbstract;
+import org.apache.isis.viewer.wicket.ui.util.Wkt;
 
 /**
  * Panel for rendering scalars of type {@link Password Isis' applib.Password}.
  */
-public class IsisPasswordPanel extends ScalarPanelTextFieldParseableAbstract {
+public class IsisPasswordPanel
+extends ScalarPanelTextFieldWithValueSemanticsAbstract<Password> {
 
     private static final long serialVersionUID = 1L;
 
     public IsisPasswordPanel(final String id, final ScalarModel scalarModel) {
-        super(id, scalarModel);
-    }
-
-
-    @Override
-    protected AbstractTextComponent<String> createTextFieldForRegular(String id) {
-        final TextFieldStringModel textModel = new TextFieldStringModel(this);
-        final PasswordTextField passwordField = new PasswordTextField(id, textModel) {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            protected void onComponentTag(ComponentTag tag) {
-                Attributes.set(tag, "type", "password");
-                super.onComponentTag(tag);
-            }
-        };
-
-        passwordField.setResetPassword(false);
-
-        return passwordField;
+        super(id, scalarModel, Password.class);
     }
 
     @Override
-    protected String getScalarPanelType() {
-        return "isisPasswordPanel";
+    protected AbstractTextComponent<Password> createTextField(final String id) {
+        return Wkt.passwordFieldWithConverter(
+                id, newTextFieldValueModel(), cls, getConverter(getModel()));
     }
 
 }

@@ -35,7 +35,6 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.apache.isis.applib.services.bookmark.Bookmark;
-import org.apache.isis.applib.services.bookmark.BookmarkService;
 import org.apache.isis.applib.services.iactn.Execution;
 import org.apache.isis.applib.services.iactn.Interaction;
 import org.apache.isis.applib.util.JaxbUtil;
@@ -59,11 +58,9 @@ import org.apache.isis.schema.ixn.v2.PropertyEditDto;
  */
 public final class InteractionDtoUtils {
 
-
     public static void init() {
         getJaxbContext();
     }
-
 
     // -- marshalling
     static JAXBContext jaxbContext;
@@ -153,9 +150,6 @@ public final class InteractionDtoUtils {
             private MemberExecutionDto clone(final MemberExecutionDto memberExecutionDto) {
                 return MemberExecutionDtoUtils.clone(memberExecutionDto);
             }
-
-
-
         };
 
 
@@ -208,7 +202,7 @@ public final class InteractionDtoUtils {
             final MemberExecutionDto executionDto) {
         final InteractionDto interactionDto = new InteractionDto();
 
-        interactionDto.setMajorVersion("1");
+        interactionDto.setMajorVersion("2");
         interactionDto.setMinorVersion("0");
 
         interactionDto.setInteractionId(interactionId);
@@ -216,15 +210,11 @@ public final class InteractionDtoUtils {
 
         executionDto.setInteractionType(
                 executionDto instanceof ActionInvocationDto
-                ? InteractionType.ACTION_INVOCATION
-                        : InteractionType.PROPERTY_EDIT);
+                    ? InteractionType.ACTION_INVOCATION
+                    : InteractionType.PROPERTY_EDIT);
 
         return interactionDto;
     }
-
-
-
-
 
     // -- newActionInvocation, newPropertyModification
 
@@ -298,29 +288,15 @@ public final class InteractionDtoUtils {
     }
 
     static String deriveLogicalMemberId(final Bookmark bookmark, final String memberId) {
-        String logicalTypeName = bookmark.getLogicalTypeName();
-        int hashAt = memberId.lastIndexOf("#");
-        String localMemberId = hashAt >= 0 && hashAt < memberId.length() ? memberId.substring(hashAt + 1) : memberId;
+        final String logicalTypeName = bookmark.getLogicalTypeName();
+        final int hashAt = memberId.lastIndexOf("#");
+        final String localMemberId = hashAt >= 0 && hashAt < memberId.length()
+                ? memberId.substring(hashAt + 1)
+                : memberId;
         return logicalTypeName + "#" + localMemberId;
     }
 
-
-
     // -- invocationFor, actionFor, timingsFor
-
-    private static ActionInvocationDto actionInvocationFor(final InteractionDto interactionDto) {
-        ActionInvocationDto invocation = (ActionInvocationDto) interactionDto.getExecution();
-        if(invocation == null) {
-            invocation = new ActionInvocationDto();
-            interactionDto.setExecution(invocation);
-            invocation.setInteractionType(InteractionType.ACTION_INVOCATION);
-        }
-        return invocation;
-    }
-
-    private static List<ParamDto> parameterListFor(final InteractionDto ixnDto) {
-        return parameterListFor(actionInvocationFor(ixnDto));
-    }
 
     private static ParamsDto parametersFor(final ActionInvocationDto invocationDto) {
         ParamsDto parameters = invocationDto.getParameters();
@@ -333,42 +309,6 @@ public final class InteractionDtoUtils {
 
     private static List<ParamDto> parameterListFor(final ActionInvocationDto invocationDto) {
         return parametersFor(invocationDto).getParameter();
-    }
-
-
-
-    // -- addParamArg
-
-    public static void addParamArg(
-            final InteractionDto interactionDto,
-            final String parameterName,
-            final Class<?> parameterType,
-            final Object arg,
-            final BookmarkService bookmarkService) {
-
-        final List<ParamDto> params = parameterListFor(interactionDto);
-        ParamDto paramDto = CommonDtoUtils.newParamDto(parameterName, parameterType, arg, bookmarkService);
-        params.add(paramDto);
-    }
-
-
-    // -- addReturn
-
-    /**
-     *
-     * @param returnType - to determine the value type (if any)
-     * @param result - either a value type (possibly boxed primitive), or a reference type
-     * @param bookmarkService - used if not a value type
-     */
-    public static void addReturn(
-            final ActionInvocationDto invocationDto,
-            final Class<?> returnType,
-            final Object result,
-            final BookmarkService bookmarkService) {
-
-        final ValueWithTypeDto returned = CommonDtoUtils
-                .newValueWithTypeDto(returnType, result, bookmarkService);
-        invocationDto.setReturned(returned);
     }
 
 
@@ -392,21 +332,20 @@ public final class InteractionDtoUtils {
     public static List<String> getParameterNames(final ActionInvocationDto ai) {
         return Collections.unmodifiableList(
                 _NullSafe.stream(getParameters(ai))
-                .map(CommonDtoUtils.PARAM_DTO_TO_NAME)
+                .map(ParamDto::getName)
                 .collect(Collectors.toList())
                 );
     }
     public static List<ValueType> getParameterTypes(final ActionInvocationDto ai) {
         return Collections.unmodifiableList(
                 _NullSafe.stream(getParameters(ai))
-                .map(CommonDtoUtils.PARAM_DTO_TO_TYPE)
+                .map(ParamDto::getType)
                 .collect(Collectors.toList())
                 );
     }
 
-
-
     // -- getParameter, getParameterName, getParameterType, getParameterArgument
+
     public static ParamDto getParameter(final ActionInvocationDto ai, final int paramNum) {
         final int parameterNumber = getNumberOfParameters(ai);
         if(paramNum > parameterNumber) {
@@ -429,24 +368,17 @@ public final class InteractionDtoUtils {
         final ParamDto paramDto = getParameter(ai, paramNum);
         return paramDto.getType();
     }
+
     public static boolean isNull(final ActionInvocationDto ai, final int paramNum) {
         final ParamDto paramDto = getParameter(ai, paramNum);
         return paramDto.isNull();
     }
 
+    // -- DEBUGGING (DUMP)
 
-    // -- getParameterArgValue
-
-    public static <T> T getParameterArgValue(final ActionInvocationDto ai, final int paramNum) {
-        final ParamDto paramDto = getParameter(ai, paramNum);
-        return CommonDtoUtils.getValue(paramDto);
-    }
-
-    // -- debugging (dump)
     public static void dump(final InteractionDto ixnDto, final PrintStream out) throws JAXBException {
         out.println(toXml(ixnDto));
     }
-
 
 
 }

@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
@@ -83,10 +82,13 @@ public final class ManagedObjects {
 
     /** is null or has neither an ObjectSpecification and a value (pojo) */
     public static boolean isNullOrUnspecifiedOrEmpty(final @Nullable ManagedObject adapter) {
-        if(adapter==null || adapter==ManagedObject.unspecified()) {
+        if(adapter==null
+                || adapter==ManagedObject.unspecified()) {
             return true;
         }
-        return adapter.getPojo()==null;
+        return adapter instanceof PackedManagedObject
+                ? ((PackedManagedObject)adapter).unpack().isEmpty()
+                : adapter.getPojo()==null;
     }
 
     /** whether has at least a spec */
@@ -177,20 +179,23 @@ public final class ManagedObjects {
     public static ManagedObject pack(
             final ObjectSpecification elementSpec,
             final Can<ManagedObject> nonScalar) {
-        return ManagedObject.of(elementSpec,
-                nonScalar.stream()
-                .map(UnwrapUtil::single)
-                .collect(Collectors.toList()));
+
+        return PackedManagedObject.pack(elementSpec, nonScalar);
     }
 
     public static Can<ManagedObject> unpack(
-            final ObjectSpecification elementSpec,
+            final ObjectSpecification elementSpec, // no longer req.
             final ManagedObject nonScalar) {
+
+        if(nonScalar!=null
+                && !(nonScalar instanceof PackedManagedObject)) {
+            throw _Exceptions.illegalArgument("nonScalar must be in packed form; got %s",
+                    nonScalar.getClass().getName());
+        }
+
         return isNullOrUnspecifiedOrEmpty(nonScalar)
                 ? Can.empty()
-                : _NullSafe.streamAutodetect(nonScalar.getPojo())
-                    .map(pojo->ManagedObject.of(elementSpec, pojo))
-                    .collect(Can.toCan());
+                : ((PackedManagedObject)nonScalar).unpack();
     }
 
     // -- COMPARE UTILITIES
@@ -330,19 +335,17 @@ public final class ManagedObjects {
     /**
      * used eg. to adapt the result of supporting methods, that return choice pojos
      */
-    public static Can<ManagedObject> adaptMultipleOfTypeThenAttachThenFilterByVisibility(
+    public static Can<ManagedObject> adaptMultipleOfTypeThenRefetchThenFilterByVisibility(
             final @NonNull  ObjectSpecification elementSpec,
             final @Nullable Object collectionOrArray,
             final @NonNull  InteractionInitiatedBy interactionInitiatedBy) {
 
         return _NullSafe.streamAutodetect(collectionOrArray)
         .map(pojo->ManagedObject.of(elementSpec, pojo)) // pojo is nullable here
-        .map(ManagedObjects.EntityUtil::reattach)
+        .peek(ManagedObjects.EntityUtil::refetch)
         .filter(ManagedObjects.VisibilityUtil.filterOn(interactionInitiatedBy))
         .collect(Can.toCan());
     }
-
-
 
     /**
      * eg. in order to prevent wrapping an object that is already wrapped
@@ -417,10 +420,26 @@ public final class ManagedObjects {
         }
 
         @Override
+        public Optional<Bookmark> getBookmarkRefreshed() {
+            return Optional.empty();
+        }
+
+        @Override
         public boolean isBookmarkMemoized() {
             return false;
         }
 
+        @Override
+        public void replacePojo(final UnaryOperator<Object> replacer) {
+        }
+
+        @Override
+        public void replaceBookmark(final UnaryOperator<Bookmark> replacer) {
+        }
+
+        @Override
+        public void reloadViewmodelFromMemoizedBookmark() {
+        }
     };
 
     // -- TITLE UTILITIES
@@ -611,41 +630,32 @@ public final class ManagedObjects {
             return managedObject;
         }
 
-        @Nullable
-        public static ManagedObject reattach(final @Nullable ManagedObject managedObject) {
+        public static void refetch(final @Nullable ManagedObject managedObject) {
             if(isNullOrUnspecifiedOrEmpty(managedObject)) {
-                return managedObject;
+                return;
             }
             val entityState = EntityUtil.getEntityState(managedObject);
             if(!entityState.isPersistable()) {
-                return managedObject;
+                return;
             }
             if(!entityState.isDetached()) {
-                return managedObject;
+                return;
             }
 
             val spec = managedObject.getSpecification();
-
-            // identification (on JDO) fails, when detached object, where oid was not previously memoized
-            if(EntityUtil.getPersistenceStandard(managedObject)
-                        .map(PersistenceStandard::isJdo)
-                        .orElse(false)
-                    && !managedObject.isBookmarkMemoized()) {
-                val msg = String.format("entity %s is required to have a memoized ID, "
-                        + "otherwise cannot re-attach",
-                        spec.getLogicalTypeName());
-                log.error(msg); // in case exception gets swallowed
-                throw _Exceptions.illegalState(msg);
-            }
-
             val objectManager = managedObject.getObjectManager();
 
-            return bookmark(managedObject)
+            val reattached = bookmark(managedObject)
             .map(bookmark->objectManager.loadObject(
                     ObjectLoader.Request.of(
                                     spec,
-                                    bookmark.getIdentifier())))
+                                    bookmark)))
             .orElse(managedObject);
+
+            val newState = EntityUtil.getEntityState(reattached);
+            _Assert.assertTrue(newState.isAttached());
+
+            managedObject.replacePojo(old->reattached.getPojo());
         }
 
         public static void requiresWhenFirstIsBookmarkableSecondIsAttached(

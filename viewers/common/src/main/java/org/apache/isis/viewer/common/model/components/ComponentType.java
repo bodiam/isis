@@ -20,7 +20,11 @@ package org.apache.isis.viewer.common.model.components;
 
 import org.springframework.lang.Nullable;
 
+import org.apache.isis.applib.annotation.Optionality;
 import org.apache.isis.core.metamodel.commons.StringExtensions;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Enumerates the different types of UI <i>Components</i> that can be constructed
@@ -32,6 +36,7 @@ import org.apache.isis.core.metamodel.commons.StringExtensions;
  * somewhat larger (such as {@link ComponentType#ENTITY}, representing an
  * entity, with its actions, properties and collections).
  */
+@RequiredArgsConstructor
 public enum ComponentType {
 
     /**
@@ -117,6 +122,10 @@ public enum ComponentType {
      */
     COLLECTION_CONTENTS,
     /**
+     * A collection of entities (the value of)
+     */
+    COLLECTION_CONTENTS_EXPORT(Optionality.OPTIONAL),
+    /**
      * A link to an entity.
      */
     ENTITY_LINK,
@@ -149,6 +158,10 @@ public enum ComponentType {
      */
     FOOTER;
 
+    private ComponentType() {
+        this.optionality = Optionality.MANDATORY;
+    }
+
     @Override
     public String toString() {
         return getId();
@@ -165,6 +178,12 @@ public enum ComponentType {
         return StringExtensions.toCamelCase(name());
     }
 
+    /**
+     * Whether there must be a ComponentFactory for this type.
+     */
+    @Getter
+    private final Optionality optionality;
+
     @Nullable
     public static ComponentType lookup(final String id) {
         for (final ComponentType componentType : values()) {
@@ -174,5 +193,7 @@ public enum ComponentType {
         }
         return null;
     }
+
+
 
 }

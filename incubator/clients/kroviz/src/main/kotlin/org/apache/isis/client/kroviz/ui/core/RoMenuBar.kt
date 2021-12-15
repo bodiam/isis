@@ -19,29 +19,34 @@
 package org.apache.isis.client.kroviz.ui.core
 
 import io.kvision.core.CssSize
+import io.kvision.core.ResString
 import io.kvision.core.UNIT
+import io.kvision.core.style
 import io.kvision.dropdown.DropDown
-import io.kvision.html.Button
+import io.kvision.dropdown.separator
 import io.kvision.html.ButtonStyle
 import io.kvision.html.Link
 import io.kvision.navbar.*
 import io.kvision.panel.SimplePanel
 import io.kvision.panel.vPanel
-import kotlinx.browser.window
-import org.apache.isis.client.kroviz.core.event.ReplayCommand
+import io.kvision.utils.px
+import org.apache.isis.client.kroviz.core.Session
+import org.apache.isis.client.kroviz.core.event.EventStore
 import org.apache.isis.client.kroviz.to.mb.Menubars
 import org.apache.isis.client.kroviz.ui.chart.SampleChartModel
-import org.apache.isis.client.kroviz.ui.dialog.About
-import org.apache.isis.client.kroviz.ui.dialog.EventDialog
-import org.apache.isis.client.kroviz.ui.dialog.LoginPrompt
-import org.apache.isis.client.kroviz.ui.dialog.SvgInline
-import org.apache.isis.client.kroviz.ui.panel.*
+import org.apache.isis.client.kroviz.ui.dialog.*
+import org.apache.isis.client.kroviz.ui.panel.EventChart
+import org.apache.isis.client.kroviz.ui.panel.GeoMap
+import org.apache.isis.client.kroviz.ui.panel.ImageSample
+import org.apache.isis.client.kroviz.ui.panel.SvgMap
 import org.apache.isis.client.kroviz.utils.IconManager
 import org.apache.isis.client.kroviz.utils.Point
 
 class RoMenuBar : SimplePanel() {
     lateinit var navbar: Navbar
     private lateinit var nav: Nav
+    private lateinit var mainEntry: DropDown
+    private lateinit var mainMenu: DropDown
 
     init {
         vPanel {
@@ -50,10 +55,50 @@ class RoMenuBar : SimplePanel() {
                 marginLeft = CssSize(-32, UNIT.px)
                 height = CssSize(40, UNIT.px)
                 nav = nav()
-//                logoButton() leaves an empty space here without network connection
-                val mainEntry = buildMainMenu()
+                mainEntry = buildMainMenu()
                 nav.add(mainEntry)
             }
+        }
+    }
+
+    private fun testFirstSession() {
+        mainEntry.separator()
+        val session = SessionManager.getSession()
+        insertSession(session)
+    }
+
+    private fun insertSession(session:Session) {
+        val menuEntry = buildMenuEntryWithImage(
+            session.baseUrl,
+            image = session.resString,
+            { this.switch(session) })
+        mainEntry.add(menuEntry)
+    }
+
+    private fun switch(session: Session) {
+        mainEntry.image = session.resString
+        mainEntry.icon = null
+        mainEntry.image.apply { systemIconStyle }
+    }
+
+    private fun buildMenuEntryWithImage(label: String, image: ResString?, action: dynamic): Link {
+        val link = Link(label, image = image, className = "dropdown-item").apply { appIconStyle }
+        link.onClick { e ->
+            val at = Point(e.pageX.toInt(), e.pageY.toInt())
+            UiManager.position = at
+            action()
+        }
+        return link
+    }
+
+    val systemIconStyle = style(".dropdown-toggle") {
+        style("img") {
+            height = 20.px
+        }
+    }
+    val appIconStyle = style(".dropdown-item") {
+        style("img") {
+            height = 20.px
         }
     }
 
@@ -68,7 +113,7 @@ class RoMenuBar : SimplePanel() {
     }
 
     private fun buildMainMenu(): DropDown {
-        val mainMenu = DropDown(
+        mainMenu = DropDown(
             "",
             icon = IconManager.find("Burger"),
             forNavbar = false,
@@ -84,14 +129,6 @@ class RoMenuBar : SimplePanel() {
 
         mainMenu.add(
             buildMenuEntry("Events", "Event", { EventDialog().open() })
-        )
-
-        mainMenu.add(
-            buildMenuEntry("Replay", "Replay", {  })
-        )
-
-        mainMenu.add(
-            buildMenuEntry("Event Log", "History", { UiManager.add("Event Log", EventLogTable(UiManager.getEventStore().log)) })
         )
 
         val chartTitle = "Sample Chart"
@@ -121,30 +158,32 @@ class RoMenuBar : SimplePanel() {
 
         val aboutTitle = "About"
         mainMenu.add(
-            buildMenuEntry(aboutTitle, "Info", { UiManager.add(aboutTitle, About().open()) })
+            buildMenuEntry(aboutTitle, "Info", { UiManager.add(aboutTitle, About().dialog) })
+        )
+
+        val testTitle = "Test"
+        mainMenu.add(
+            buildMenuEntry(testTitle, "Test", { this.testFirstSession() })
+        )
+
+        mainMenu.add(
+            buildMenuEntry("Browser in IFrame", "Wikipedia", { BrowserWindow("https://isis.apache.org/").open() })
+        )
+
+        mainMenu.add(
+            buildMenuEntry("SSH", "Terminal", { ShellWindow("localhost:8080").open() })
         )
 
         return mainMenu
     }
 
     fun amendMenu(menuBars: Menubars) {
-        //       logoButton()
         menuBars.primary.menu.forEach { m ->
             val dd = MenuFactory.buildForMenu(m)
             if (dd.getChildren().isNotEmpty()) nav.add(dd)
         }
         nav.add(MenuFactory.buildForMenu(menuBars.secondary.menu.first()))
         nav.add(MenuFactory.buildForMenu(menuBars.tertiary.menu.first()))
-    }
-
-    private fun logoButton() {
-        val classNames = "isis-logo-button-image logo-button"
-        val logo = Button("", style = ButtonStyle.LINK)
-        logo.addCssClass(classNames)
-        logo.onClick {
-            window.open("https://isis.apache.org")
-        }
-        nav.add(logo)
     }
 
 }

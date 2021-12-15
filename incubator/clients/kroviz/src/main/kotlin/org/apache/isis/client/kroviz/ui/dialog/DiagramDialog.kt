@@ -19,24 +19,20 @@
 package org.apache.isis.client.kroviz.ui.dialog
 
 import org.apache.isis.client.kroviz.to.ValueType
-import org.apache.isis.client.kroviz.ui.core.FormItem
-import org.apache.isis.client.kroviz.ui.core.MenuFactory
-import org.apache.isis.client.kroviz.ui.core.RoDialog
-import org.apache.isis.client.kroviz.ui.core.UiManager
+import org.apache.isis.client.kroviz.ui.core.*
 import org.apache.isis.client.kroviz.utils.*
 import io.kvision.html.Link as KvisionHtmlLink
 
 class DiagramDialog(
         var label: String,
         private var pumlCode: String
-) : Command() {
+) : Controller() {
 
     private var callBack: Any = UUID()
-    private var dialog: RoDialog
     private val formItems = mutableListOf<FormItem>()
 
-    fun open() {
-        dialog.open()
+    override fun open() {
+        super.open()
         UmlUtils.generateJsonDiagram(pumlCode, callBack)
     }
 
@@ -49,7 +45,7 @@ class DiagramDialog(
                 heightPerc = 80,
                 caption = label,
                 items = formItems,
-                command = this,
+                controller = this,
                 defaultAction = "Pin",
                 menu = buildMenu()
         )
@@ -66,7 +62,7 @@ class DiagramDialog(
     }
 
     private fun getDiagramCode(): String {
-        val logEntry = UiManager.getEventStore().findByDispatcher(callBack as UUID)
+        val logEntry = SessionManager.getEventStore().findByDispatcher(callBack as UUID)
         return logEntry.getResponse()
     }
 
@@ -81,7 +77,7 @@ class DiagramDialog(
         DomUtil.replaceWith(callBack as UUID, svg)
     }
 
-    fun buildMenu(): List<KvisionHtmlLink> {
+    private fun buildMenu(): List<KvisionHtmlLink> {
         val menu = mutableListOf<KvisionHtmlLink>()
         menu.add(buildPinAction())
         menu.add(buildDownloadAction())

@@ -35,20 +35,22 @@ import kotlin.test.assertTrue
  */
 class ResponseRegressionTest {
 
+    //TODO
+    /*
     @BeforeTest
     fun setup() {
         val user = "sven"
         val pw = "pass"
         val url = "http://${user}:${pw}@localhost:8080/restful/"
-        UiManager.login(url, user, pw)
+        SessionManager.login(url, user, pw)
     }
 
     @ExperimentalCoroutinesApi
-//TODO    @Test
+    @Test
     fun testCompareSnapshotWithResponse() {
         //given
         val map = Response2Handler.map
-        val credentials = UiManager.getCredentials()
+        val credentials = SessionManager.getCredentials()
         //when
         console.log("[RRT.testCompareSnapshotWithResponse]")
         map.forEach { rh ->
@@ -82,5 +84,5 @@ class ResponseRegressionTest {
       //  val hc = Client("id", link.href)
         return "Why must this be so complicated?"
     }
-
+*/
 }

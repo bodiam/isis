@@ -26,7 +26,10 @@ import java.util.function.UnaryOperator;
 import org.springframework.lang.Nullable;
 
 import org.apache.isis.applib.services.bookmark.Bookmark;
+import org.apache.isis.commons.internal.assertions._Assert;
 import org.apache.isis.commons.internal.base._Lazy;
+import org.apache.isis.commons.internal.collections._Collections;
+import org.apache.isis.commons.internal.debug._XrayEvent;
 import org.apache.isis.commons.internal.exceptions._Exceptions;
 import org.apache.isis.core.metamodel.context.MetaModelContext;
 import org.apache.isis.core.metamodel.facets.object.icon.ObjectIcon;
@@ -35,12 +38,11 @@ import org.apache.isis.core.metamodel.objectmanager.ObjectManager;
 import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import lombok.Value;
 import lombok.val;
 
 /**
@@ -62,10 +64,64 @@ public interface ManagedObject {
     Object getPojo();
 
     /**
+     * Introduced, so we can re-fetch detached entity pojos in place.
+     * @apiNote should be package private, and not publicly exposed
+     * (but the <i>Java</i> language is not there yet)
+     */
+    void replacePojo(UnaryOperator<Object> replacer);
+
+    void replaceBookmark(UnaryOperator<Bookmark> replacer);
+
+    /**
      * Returns the object's bookmark as identified by the ObjectManager.
      * Bookmarks are considered immutable, hence will be memoized once fetched.
      */
     Optional<Bookmark> getBookmark();
+
+    /**
+     * Similar to {@link #getBookmark()}, but invalidates any memoized {@link Bookmark}
+     * such that the {@link Bookmark} returned is recreated, reflecting the object's current state.
+     * @implNote
+     * As this is not required, in fact not recommended for entities,
+     * (but might be necessary for viewmodels, when their state has changed),
+     * we silently ignore bookmark invalidation attempts for entities.
+     */
+    Optional<Bookmark> getBookmarkRefreshed();
+
+    /**
+     * Reload current viewmodel object from memoized bookmark, otherwise does nothing.
+     */
+    default void reloadViewmodelFromMemoizedBookmark() {
+        val spec = getSpecification();
+        if(isBookmarkMemoized()
+                && spec.isViewModel()) {
+
+            val bookmark = getBookmark().get();
+            val viewModelClass = spec.getCorrespondingClass();
+
+            val recreatedViewmodel =
+                    getMetaModelContext().getFactoryService().viewModel(viewModelClass, bookmark);
+
+            _XrayEvent.event("Viewmodel '%s' recreated from memoized bookmark.", viewModelClass.getName());
+
+            replacePojo(old->recreatedViewmodel);
+        }
+    }
+
+    default void reloadViewmodelFromBookmark(final @NonNull Bookmark bookmark) {
+        val spec = getSpecification();
+        if(spec.isViewModel()) {
+            val viewModelClass = spec.getCorrespondingClass();
+
+            val recreatedViewmodel =
+                    getMetaModelContext().getFactoryService().viewModel(viewModelClass, bookmark);
+
+            _XrayEvent.event("Viewmodel '%s' recreated from provided bookmark.", viewModelClass.getName());
+
+            replacePojo(old->recreatedViewmodel);
+            replaceBookmark(old->bookmark);
+        }
+    }
 
     boolean isBookmarkMemoized();
 
@@ -149,17 +205,14 @@ public interface ManagedObject {
         //actual type in use (during runtime) might be a sub-class of the above
         if(pojo==null
                 || pojo.getClass().equals(specification.getCorrespondingClass())
-                ) {
+                || specification.isValue()) {
             // if actual type matches spec's, we assume, that we don't need to reload,
             // so this is a shortcut for performance reasons
             return SimpleManagedObject.of(specification, pojo);
         }
 
-        //_Probe.errOut("upgrading spec %s on type %s", specification, pojo.getClass());
-        //ManagedObjects.warnIfAttachedEntity(adapter, "consider using ManagedObject.identified(...) for entity");
-
-        val specLoader = specification.getMetaModelContext().getSpecificationLoader();
-        return ManagedObject.lazy(specLoader, pojo);
+        val objManager = specification.getMetaModelContext().getObjectManager();
+        return objManager.adapt(pojo);
     }
 
     /**
@@ -169,6 +222,10 @@ public interface ManagedObject {
             final @NonNull ObjectSpecification specification,
             final @NonNull Object pojo,
             final @NonNull Bookmark bookmark) {
+
+        if(pojo!=null) {
+            _Assert.assertFalse(_Collections.isCollectionOrArrayOrCanType(pojo.getClass()));
+        }
 
         if(!specification.getCorrespondingClass().isAssignableFrom(pojo.getClass())) {
             throw _Exceptions.illegalArgument(
@@ -190,6 +247,11 @@ public interface ManagedObject {
     public static ManagedObject lazy(
             final SpecificationLoader specLoader,
             final Object pojo) {
+
+        if(pojo!=null) {
+            _Assert.assertFalse(_Collections.isCollectionOrArrayOrCanType(pojo.getClass()));
+        }
+
         ManagedObjects.assertPojoNotManaged(pojo);
         val adapter = new LazyManagedObject(cls->specLoader.specForType(cls).orElse(null), pojo);
         //ManagedObjects.warnIfAttachedEntity(adapter, "consider using ManagedObject.identified(...) for entity");
@@ -210,27 +272,43 @@ public interface ManagedObject {
 
     // -- SIMPLE
 
-    @Value
-    @RequiredArgsConstructor(staticName="of", access = AccessLevel.PRIVATE)
+    //@Value
+    //@RequiredArgsConstructor(staticName="of", access = AccessLevel.PRIVATE)
+    @AllArgsConstructor(staticName="of", access = AccessLevel.PRIVATE)
     @EqualsAndHashCode(of = "pojo")
     @ToString(of = {"specification", "pojo"}) //ISIS-2317 make sure toString() is without side-effects
+    @Getter
     static final class SimpleManagedObject implements ManagedObject {
 
         public static ManagedObject identified(
                 @NonNull  final ObjectSpecification spec,
                 final @Nullable Object pojo,
                 @NonNull  final Bookmark bookmark) {
+
+            if(pojo!=null) {
+                _Assert.assertFalse(_Collections.isCollectionOrArrayOrCanType(pojo.getClass()));
+            }
+
             val managedObject = SimpleManagedObject.of(spec, pojo);
             managedObject.bookmarkLazy.set(Optional.of(bookmark));
             return managedObject;
         }
 
         @NonNull private final ObjectSpecification specification;
-        @Nullable private final Object pojo;
+        @Nullable private /*final*/ Object pojo;
 
         @Override
         public Optional<Bookmark> getBookmark() {
             return bookmarkLazy.get();
+        }
+
+        @Override
+        public Optional<Bookmark> getBookmarkRefreshed() {
+            // silently ignore invalidation, when the pojo is an entity
+            if(!specification.isEntity()) {
+                bookmarkLazy.clear();
+            }
+            return getBookmark();
         }
 
         // -- LAZY ID HANDLING
@@ -242,6 +320,20 @@ public interface ManagedObject {
             return bookmarkLazy.isMemoized();
         }
 
+        @Override
+        public void replacePojo(final UnaryOperator<Object> replacer) {
+            pojo = replacer.apply(pojo);
+        }
+
+        @Override
+        public void replaceBookmark(final UnaryOperator<Bookmark> replacer) {
+            final Bookmark old = bookmarkLazy.isMemoized()
+                    ? bookmarkLazy.get().orElse(null)
+                    : null;
+            bookmarkLazy.clear();
+            bookmarkLazy.set(Optional.ofNullable(replacer.apply(old)));
+        }
+
     }
 
     // -- LAZY
@@ -251,11 +343,20 @@ public interface ManagedObject {
 
         @NonNull private final Function<Class<?>, ObjectSpecification> specLoader;
 
-        @Getter @NonNull private final Object pojo;
+        @Getter @NonNull private /*final*/ Object pojo;
 
         @Override
         public Optional<Bookmark> getBookmark() {
             return bookmarkLazy.get();
+        }
+
+        @Override
+        public Optional<Bookmark> getBookmarkRefreshed() {
+            // silently ignore invalidation, when the pojo is an entity
+            if(!specification.get().isEntity()) {
+                bookmarkLazy.clear();
+            }
+            return getBookmark();
         }
 
         // -- LAZY ID HANDLING
@@ -295,11 +396,20 @@ public interface ManagedObject {
             return specLoader.apply(pojo.getClass());
         }
 
+        @Override
+        public void replacePojo(final UnaryOperator<Object> replacer) {
+            pojo = replacer.apply(pojo);
+        }
 
+        @Override
+        public void replaceBookmark(final UnaryOperator<Bookmark> replacer) {
+            final Bookmark old = bookmarkLazy.isMemoized()
+                    ? bookmarkLazy.get().orElse(null)
+                    : null;
+            bookmarkLazy.clear();
+            bookmarkLazy.set(Optional.ofNullable(replacer.apply(old)));
+        }
 
     }
-
-
-
 
 }

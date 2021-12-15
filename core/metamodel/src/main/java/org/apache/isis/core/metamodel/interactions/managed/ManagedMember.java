@@ -50,12 +50,10 @@ implements ManagedFeature {
     @RequiredArgsConstructor
     public static enum MemberType {
         PROPERTY(OneToOneAssociation.class, (spec, propertyId)->
-            spec.getAssociation(propertyId)
-            .map(property->property.isOneToOneAssociation()?property:null)),
+            spec.getProperty(propertyId)),
 
         COLLECTION(OneToManyAssociation.class, (spec, collectionId)->
-            spec.getAssociation(collectionId)
-            .map(collection->collection.isOneToManyAssociation()?collection:null)),
+            spec.getCollection(collectionId)),
 
         ACTION(ObjectAction.class, (spec, actionId)->
             spec.getAction(actionId));
@@ -98,9 +96,10 @@ implements ManagedFeature {
 
     @NonNull private ManagedObject owner;
     public ManagedObject getOwner() {
-        //XXX this is a hack,
+        //XXX this is a safeguard
         // see also org.apache.isis.core.metamodel.interactions.managed.ManagedProperty.ManagedProperty(ManagedObject, OneToOneAssociation, Where)
-        return owner = EntityUtil.reattach(owner);
+        EntityUtil.refetch(owner);
+        return owner;
     }
 
     @Getter @NonNull private final Where where;

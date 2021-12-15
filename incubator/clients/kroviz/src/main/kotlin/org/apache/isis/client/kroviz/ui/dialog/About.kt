@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.isis.client.kroviz.ui.dialog
 
 import org.apache.isis.client.kroviz.to.ValueType
@@ -24,15 +23,9 @@ import org.apache.isis.client.kroviz.ui.core.FormItem
 import org.apache.isis.client.kroviz.ui.core.RoDialog
 import org.apache.isis.client.kroviz.utils.UUID
 
-class About : Command() {
-    private var dialog: RoDialog
+class About : Controller() {
     private val formItems = mutableListOf<FormItem>()
     private val _LI = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-
-    fun open() : RoDialog {
-        dialog.open()
-        return dialog
-    }
 
     init {
         // see: https://upload.wikimedia.org/wikipedia/commons/6/6c/Trajans-Column-lower-animated.svg
@@ -51,7 +44,7 @@ class About : Command() {
                 widthPerc = 50,
                 caption = "About",
                 items = formItems,
-                command = this)
+                controller = this)
     }
 
 }

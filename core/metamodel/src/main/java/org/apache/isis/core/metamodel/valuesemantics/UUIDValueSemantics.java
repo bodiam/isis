@@ -24,11 +24,12 @@ import javax.inject.Named;
 
 import org.springframework.stereotype.Component;
 
-import org.apache.isis.applib.adapters.ValueSemanticsAbstract;
-import org.apache.isis.applib.adapters.EncoderDecoder;
-import org.apache.isis.applib.adapters.Parser;
-import org.apache.isis.applib.adapters.Renderer;
-import org.apache.isis.applib.adapters.ValueSemanticsProvider;
+import org.apache.isis.applib.value.semantics.EncoderDecoder;
+import org.apache.isis.applib.value.semantics.Parser;
+import org.apache.isis.applib.value.semantics.Renderer;
+import org.apache.isis.applib.value.semantics.ValueSemanticsAbstract;
+import org.apache.isis.applib.value.semantics.ValueSemanticsProvider;
+import org.apache.isis.commons.collections.Can;
 import org.apache.isis.commons.internal.base._Strings;
 import org.apache.isis.schema.common.v2.ValueType;
 
@@ -50,7 +51,7 @@ implements
 
     @Override
     public ValueType getSchemaValueType() {
-        return UNREPRESENTED;
+        return ValueType.STRING; // this type can be easily converted to string and back
     }
 
     // -- ENCODER DECODER
@@ -96,5 +97,15 @@ implements
     public int maxLength() {
         return 36;
     }
+
+    @Override
+    public Can<UUID> getExamples() {
+        return Can.of(
+                UUID.randomUUID(),
+                UUID.randomUUID());
+    }
+
+    //    private static final Pattern pattern = Pattern.compile(
+    //            "[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}");
 
 }

@@ -44,6 +44,7 @@ import org.apache.isis.commons.internal.base._Strings;
 import org.apache.isis.commons.internal.collections._Lists;
 import org.apache.isis.commons.internal.debug._Probe;
 import org.apache.isis.commons.internal.debug._Probe.EntryPoint;
+import org.apache.isis.core.metamodel.commons.ScalarRepresentation;
 import org.apache.isis.core.metamodel.facets.members.cssclass.CssClassFacet;
 import org.apache.isis.core.metamodel.facets.objectvalue.labelat.LabelAtFacet;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
@@ -92,8 +93,6 @@ implements ScalarModelSubscriber {
     protected static final String ID_SCALAR_NAME = "scalarName";
     protected static final String ID_SCALAR_VALUE = "scalarValue";
 
-
-
     /**
      * as per {@link #inlinePromptLink}
      */
@@ -104,7 +103,6 @@ implements ScalarModelSubscriber {
      * as per {@link #scalarIfRegularInlinePromptForm}.
      */
     public static final String ID_SCALAR_IF_REGULAR_INLINE_PROMPT_FORM = "scalarIfRegularInlinePromptForm";
-
 
     private static final String ID_EDIT_PROPERTY = "editProperty";
     private static final String ID_FEEDBACK = "feedback";
@@ -170,7 +168,7 @@ implements ScalarModelSubscriber {
         // also repaint the param if its pending arg has changed.
         return valueChanged
                 ? Repaint.PARAM_ONLY
-                        : Repaint.NOTHING;
+                : Repaint.NOTHING;
     }
 
     public static class InlinePromptConfig {
@@ -203,7 +201,7 @@ implements ScalarModelSubscriber {
         }
     }
 
-    // ///////////////////////////////////////////////////////////////////
+    // -- CONSTRUCTION
 
     protected final ScalarModel scalarModel;
 
@@ -220,14 +218,12 @@ implements ScalarModelSubscriber {
 
     WebMarkupContainer inlinePromptLink;
 
-    public ScalarPanelAbstract(final String id, final ScalarModel scalarModel) {
+    protected ScalarPanelAbstract(final String id, final ScalarModel scalarModel) {
         super(id, scalarModel);
         this.scalarModel = scalarModel;
     }
 
-
-    // ///////////////////////////////////////////////////////////////////
-
+    // -- INIT
 
     @Override
     protected void onInitialize() {
@@ -245,7 +241,7 @@ implements ScalarModelSubscriber {
 
         final ScalarModel scalarModel = getModel();
 
-        final String disableReasonIfAny = scalarModel.whetherDisabled();
+        final String disableReasonIfAny = scalarModel.disableReasonIfAny();
         final boolean mustBeEditable = scalarModel.mustBeEditable();
         if (disableReasonIfAny != null) {
             if(mustBeEditable) {
@@ -264,9 +260,11 @@ implements ScalarModelSubscriber {
     }
 
     /**
-     * Mandatory hook; simply determines the CSS that is added to the outermost 'scalarTypeContainer' div.
+     * determines the CSS that is added to the outermost 'scalarTypeContainer' div.
      */
-    protected abstract String getScalarPanelType();
+    public final String getCssClassName() {
+        return _Strings.decapitalize(getClass().getSimpleName());
+    }
 
     /**
      * Mandatory hook for implementations to indicate whether it supports the {@link PromptStyle#INLINE inline} or
@@ -286,9 +284,6 @@ implements ScalarModelSubscriber {
      */
     protected abstract InlinePromptConfig getInlinePromptConfig();
 
-
-
-
     /**
      * Builds GUI lazily prior to first render.
      *
@@ -300,7 +295,7 @@ implements ScalarModelSubscriber {
     private void buildGui() {
 
         scalarTypeContainer = Wkt.containerAdd(this, ID_SCALAR_TYPE_CONTAINER);
-        Wkt.cssAppend(scalarTypeContainer, getScalarPanelType());
+        Wkt.cssAppend(scalarTypeContainer, getCssClassName());
 
         this.scalarIfCompact = createComponentForCompact();
         this.scalarIfRegular = createComponentForRegular();
@@ -367,7 +362,7 @@ implements ScalarModelSubscriber {
 
         // prevent from tabbing into non-editable widgets.
         if(scalarModel.isProperty()
-                && scalarModel.getMode() == EntityModel.EitherViewOrEdit.VIEW
+                && scalarModel.getMode() == ScalarRepresentation.VIEWING
                 && (scalarModel.getPromptStyle().isDialog()
                         || !scalarModel.canEnterEditMode())) {
             getScalarValueComponent().add(new AttributeAppender("tabindex", "-1"));
@@ -384,7 +379,6 @@ implements ScalarModelSubscriber {
 
         notifyOnChange(this);
         addFormComponentBehaviourToUpdateSubscribers();
-
     }
 
     /**
@@ -765,11 +759,13 @@ implements ScalarModelSubscriber {
 
         val linksBelow = linkAndLabels
                 .filter(LinkAndLabel.isPositionedAt(ActionLayout.Position.BELOW));
-        AdditionalLinksPanel.addAdditionalLinks(labelIfRegular, ID_ASSOCIATED_ACTION_LINKS_BELOW, linksBelow, AdditionalLinksPanel.Style.INLINE_LIST);
+        AdditionalLinksPanel.addAdditionalLinks(
+                labelIfRegular, ID_ASSOCIATED_ACTION_LINKS_BELOW, linksBelow, AdditionalLinksPanel.Style.INLINE_LIST);
 
         val linksRight = linkAndLabels
                 .filter(LinkAndLabel.isPositionedAt(ActionLayout.Position.RIGHT));
-        AdditionalLinksPanel.addAdditionalLinks(labelIfRegular, ID_ASSOCIATED_ACTION_LINKS_RIGHT, linksRight, AdditionalLinksPanel.Style.DROPDOWN);
+        AdditionalLinksPanel.addAdditionalLinks(
+                labelIfRegular, ID_ASSOCIATED_ACTION_LINKS_RIGHT, linksRight, AdditionalLinksPanel.Style.DROPDOWN);
     }
 
     /**

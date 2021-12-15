@@ -22,11 +22,12 @@ import javax.inject.Named;
 
 import org.springframework.stereotype.Component;
 
-import org.apache.isis.applib.adapters.EncoderDecoder;
-import org.apache.isis.applib.adapters.Parser;
-import org.apache.isis.applib.adapters.Renderer;
-import org.apache.isis.applib.adapters.ValueSemanticsAbstract;
-import org.apache.isis.applib.adapters.ValueSemanticsProvider;
+import org.apache.isis.applib.value.semantics.EncoderDecoder;
+import org.apache.isis.applib.value.semantics.Parser;
+import org.apache.isis.applib.value.semantics.Renderer;
+import org.apache.isis.applib.value.semantics.ValueSemanticsAbstract;
+import org.apache.isis.applib.value.semantics.ValueSemanticsProvider;
+import org.apache.isis.commons.collections.Can;
 import org.apache.isis.schema.common.v2.ValueType;
 import org.apache.isis.valuetypes.asciidoc.applib.value.AsciiDoc;
 
@@ -83,6 +84,13 @@ implements
     @Override
     public AsciiDoc fromEncodedString(final String encodedString) {
         return AsciiDoc.valueOf(encodedString);
+    }
+
+    @Override
+    public Can<AsciiDoc> getExamples() {
+        return Can.of(
+                AsciiDoc.valueOf("a AsciiDoc"),
+                AsciiDoc.valueOf("another AsciiDoc"));
     }
 
 }

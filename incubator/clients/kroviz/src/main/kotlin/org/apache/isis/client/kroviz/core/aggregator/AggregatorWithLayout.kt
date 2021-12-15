@@ -19,14 +19,14 @@ abstract class AggregatorWithLayout : BaseAggregator() {
     }
 
     protected fun handleLayout(layout: Layout, dm: DisplayModelWithLayout, referrer: String) {
-        console.log("[CA.handleLayout] TODO ISIS-2846")
-        console.log(layout)
         if (dm.layout == null) {
             dm.addLayout(layout)
             dm.properties.propertyLayoutList.forEach { p ->
                 val l = p.link
                 if (l == null) {
+                    console.log("[AWL.handleLayout]")
                     console.log(p.id + " link empty")  // ISIS-2846
+                    console.log(p)
                 } else {
                     val isDn = l.href.contains("datanucleus")
                     if (!isDn) {

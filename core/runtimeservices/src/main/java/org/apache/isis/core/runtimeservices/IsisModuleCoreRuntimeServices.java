@@ -31,6 +31,7 @@ import org.apache.isis.core.runtime.IsisModuleCoreRuntime;
 import org.apache.isis.core.runtimeservices.bookmarks.BookmarkServiceDefault;
 import org.apache.isis.core.runtimeservices.command.CommandDtoFactoryDefault;
 import org.apache.isis.core.runtimeservices.command.CommandExecutorServiceDefault;
+import org.apache.isis.core.runtimeservices.command.SchemaValueMarshallerDefault;
 import org.apache.isis.core.runtimeservices.email.EmailServiceDefault;
 import org.apache.isis.core.runtimeservices.eventbus.EventBusServiceSpring;
 import org.apache.isis.core.runtimeservices.executor.MemberExecutorServiceDefault;
@@ -41,6 +42,8 @@ import org.apache.isis.core.runtimeservices.i18n.po.TranslationServicePoMenu;
 import org.apache.isis.core.runtimeservices.icons.ObjectIconServiceDefault;
 import org.apache.isis.core.runtimeservices.interaction.InteractionDtoFactoryDefault;
 import org.apache.isis.core.runtimeservices.jaxb.JaxbServiceDefault;
+import org.apache.isis.core.runtimeservices.locale.LocaleChoiceProviderDefault;
+import org.apache.isis.core.runtimeservices.locale.LanguageProviderDefault;
 import org.apache.isis.core.runtimeservices.memento.ObjectMementoServiceDefault;
 import org.apache.isis.core.runtimeservices.menubars.MenuBarsLoaderServiceDefault;
 import org.apache.isis.core.runtimeservices.menubars.bootstrap3.MenuBarsServiceBS3;
@@ -91,6 +94,8 @@ import org.apache.isis.core.runtimeservices.xmlsnapshot.XmlSnapshotServiceDefaul
         InteractionDtoFactoryDefault.class,
         InteractionServiceDefault.class,
         JaxbServiceDefault.class,
+        LocaleChoiceProviderDefault.class,
+        LanguageProviderDefault.class,
         ObjectMementoServiceDefault.class,
         TranslationServicePo.class,
         MemberExecutorServiceDefault.class,
@@ -106,6 +111,7 @@ import org.apache.isis.core.runtimeservices.xmlsnapshot.XmlSnapshotServiceDefaul
         XmlServiceDefault.class,
         XmlSnapshotServiceDefault.class,
         ObjectLifecyclePublisherDefault.class,
+        SchemaValueMarshallerDefault.class,
 
         // @Controller
         RoutingServiceDefault.class,

@@ -51,10 +51,12 @@ import org.apache.isis.core.metamodel.specloader.SpecificationLoaderDefault;
 import org.apache.isis.core.metamodel.valuesemantics.BigDecimalValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.BigIntegerValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.BlobValueSemantics;
+import org.apache.isis.core.metamodel.valuesemantics.BookmarkValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.BooleanValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.BufferedImageValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.ByteValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.ChangesDtoValueSemantics;
+import org.apache.isis.core.metamodel.valuesemantics.CharacterValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.ClobValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.CommandDtoValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.DoubleValueSemantics;
@@ -62,8 +64,10 @@ import org.apache.isis.core.metamodel.valuesemantics.FloatValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.IntValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.InteractionDtoValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.LocalResourcePathValueSemantics;
+import org.apache.isis.core.metamodel.valuesemantics.LocaleValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.LongValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.MarkupValueSemantics;
+import org.apache.isis.core.metamodel.valuesemantics.OidDtoValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.PasswordValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.ShortValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.StringValueSemantics;
@@ -80,11 +84,7 @@ import org.apache.isis.core.metamodel.valuesemantics.temporal.legacy.JavaSqlDate
 import org.apache.isis.core.metamodel.valuesemantics.temporal.legacy.JavaSqlTimeStampValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.temporal.legacy.JavaSqlTimeValueSemantics;
 import org.apache.isis.core.metamodel.valuesemantics.temporal.legacy.JavaUtilDateValueSemantics;
-import org.apache.isis.core.metamodel.valuesemantics.temporal.legacy.joda.JodaDateTimeValueSemantics;
-import org.apache.isis.core.metamodel.valuesemantics.temporal.legacy.joda.JodaLocalDateTimeValueSemantics;
-import org.apache.isis.core.metamodel.valuesemantics.temporal.legacy.joda.JodaLocalDateValueSemantics;
-import org.apache.isis.core.metamodel.valuesemantics.temporal.legacy.joda.JodaLocalTimeValueSemantics;
-import org.apache.isis.core.metamodel.valuetypes.ValueSemanticsRegistryDefault;
+import org.apache.isis.core.metamodel.valuetypes.ValueSemanticsResolverDefault;
 import org.apache.isis.core.security.IsisModuleCoreSecurity;
 
 @Configuration
@@ -104,7 +104,7 @@ import org.apache.isis.core.security.IsisModuleCoreSecurity;
         ClassSubstitutorForCollections.class,
         ClassSubstitutorForDomainObjects.class,
         ClassSubstitutorRegistry.class,
-        ValueSemanticsRegistryDefault.class,
+        ValueSemanticsResolverDefault.class,
 
         // Value Semantics (built-in defaults)
         BooleanValueSemantics.class,
@@ -116,6 +116,7 @@ import org.apache.isis.core.security.IsisModuleCoreSecurity;
         FloatValueSemantics.class,
         BigDecimalValueSemantics.class,
         BigIntegerValueSemantics.class,
+        CharacterValueSemantics.class,
         StringValueSemantics.class,
         PasswordValueSemantics.class,
         BufferedImageValueSemantics.class,
@@ -124,7 +125,10 @@ import org.apache.isis.core.security.IsisModuleCoreSecurity;
         MarkupValueSemantics.class,
         URLValueSemantics.class,
         LocalResourcePathValueSemantics.class,
+        BookmarkValueSemantics.class,
+        OidDtoValueSemantics.class,
         UUIDValueSemantics.class,
+        LocaleValueSemantics.class,
         TreeNodeValueSemantics.class,
         ChangesDtoValueSemantics.class,
         CommandDtoValueSemantics.class,
@@ -141,11 +145,6 @@ import org.apache.isis.core.security.IsisModuleCoreSecurity;
         JavaSqlTimeValueSemantics.class,
         JavaSqlTimeStampValueSemantics.class,
         JavaUtilDateValueSemantics.class,
-        // Value Semantics (temporal joda)
-        JodaLocalTimeValueSemantics.class,
-        JodaDateTimeValueSemantics.class,
-        JodaLocalDateTimeValueSemantics.class,
-        JodaLocalDateValueSemantics.class,
 
         // @Service's
         ObjectManagerDefault.class,

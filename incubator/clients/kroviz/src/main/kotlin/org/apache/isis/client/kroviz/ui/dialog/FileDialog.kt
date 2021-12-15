@@ -24,9 +24,9 @@ import org.apache.isis.client.kroviz.to.ValueType
 import org.apache.isis.client.kroviz.ui.core.FormItem
 import org.apache.isis.client.kroviz.ui.core.RoDialog
 
-class FileDialog(val logEntry: LogEntry) : Command() {
+class FileDialog(val logEntry: LogEntry) : Controller() {
 
-    fun open() {
+    override fun open() {
         val rv = logEntry.getTransferObject() as ResultValue
         val rvr = rv.result!!
         val value = rvr.value!!.content as String
@@ -38,7 +38,7 @@ class FileDialog(val logEntry: LogEntry) : Command() {
         RoDialog(
                 caption = label,
                 items = formItems,
-                command = this).open()
+                controller = this).open()
     }
 
 }

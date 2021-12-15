@@ -28,7 +28,7 @@ import demoapp.dom._infra.seed.SeedService;
 public class DemoFixtureScript extends FixtureScript {
 
     @Override
-    protected void execute(ExecutionContext executionContext) {
+    protected void execute(final ExecutionContext executionContext) {
         serviceRegistry
                 .select(SeedService.class)  // lookup rather than injection to avoid circular reference.
                 .forEach(seedService -> seedService.seed(this, executionContext));

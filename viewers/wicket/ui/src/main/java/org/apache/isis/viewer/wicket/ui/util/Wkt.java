@@ -20,6 +20,7 @@ package org.apache.isis.viewer.wicket.ui.util;
 
 import java.util.List;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.MarkupContainer;
 import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
@@ -61,10 +62,12 @@ import org.apache.isis.commons.internal.debug._Probe.EntryPoint;
 import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettings;
 import org.apache.isis.viewer.wicket.ui.panels.PanelUtil;
 
+import lombok.NonNull;
 import lombok.val;
 import lombok.experimental.UtilityClass;
 
 import de.agilecoders.wicket.core.markup.html.bootstrap.behavior.CssClassNameAppender;
+import de.agilecoders.wicket.core.util.Attributes;
 
 /**
  * Wicket common idioms, in alphabetical order.
@@ -124,6 +127,22 @@ public class Wkt {
         };
     }
 
+    private static class ReplaceDisabledTagWithReadonlyTagBehavior extends Behavior {
+        private static final long serialVersionUID = 1L;
+        @Override public void onComponentTag(final Component component, final ComponentTag tag) {
+            super.onComponentTag(component, tag);
+            if(component.isEnabled()) {
+                return;
+            }
+            tag.remove("disabled");
+            tag.put("readonly","readonly");
+        }
+    }
+
+    public Behavior behaviorReplaceDisabledTagWithReadonlyTag() {
+        return new ReplaceDisabledTagWithReadonlyTagBehavior();
+    }
+
     public Behavior behaviorAddOnClick(
             final MarkupContainer markupContainer,
             final SerializableConsumer<AjaxRequestTarget> onClick) {
@@ -134,6 +153,12 @@ public class Wkt {
             final MarkupContainer markupContainer,
             final SerializableConsumer<AjaxRequestTarget> onRespond) {
         return add(markupContainer, behaviorFireOnEscapeKey(onRespond));
+    }
+
+    public void behaviorAddReplaceDisabledTagWithReadonlyTag(final Component component) {
+        if (component.getBehaviors(ReplaceDisabledTagWithReadonlyTagBehavior.class).isEmpty()) {
+            component.add(new ReplaceDisabledTagWithReadonlyTagBehavior());
+        }
     }
 
     // -- BUTTON
@@ -259,6 +284,11 @@ public class Wkt {
 
     public <T extends Component> T cssAppend(final T component, final Identifier identifier) {
         return cssAppend(component, cssNormalize(identifier));
+    }
+
+    public <T extends Component> T cssReplace(final T component, final @Nullable String cssClass) {
+        component.add(AttributeModifier.replace("class", _Strings.nullToEmpty(cssClass)));
+        return component;
     }
 
     public static String cssNormalize(final Identifier identifier) {
@@ -492,8 +522,35 @@ public class Wkt {
 
     // -- TEXT FIELD
 
+    /**
+     * @param converter - if {@code null} returns {@link TextField} using Wicket's default converters.
+     */
     public <T> TextField<T> textFieldWithConverter(
-            final String id, final IModel<T> model, final Class<T> type, final IConverter<T> converter) {
+            final String id, final IModel<T> model, final Class<T> type,
+            final @Nullable IConverter<T> converter) {
+        return converter!=null
+            ? new TextField<T>(id, model, type) {
+                    private static final long serialVersionUID = 1L;
+                    @SuppressWarnings("unchecked")
+                    @Override public <C> IConverter<C> getConverter(final Class<C> cType) {
+                        return cType == type
+                                ? (IConverter<C>) converter
+                                : super.getConverter(cType);}
+                    @Override public void error(final IValidationError error) {
+                        if(error instanceof ValidationError) {
+                            // use plain error message from ConversionException, circumventing resource bundles.
+                            this.error(((ValidationError)error).getMessage());
+                        } else {
+                            super.error(error);
+                        }
+                    }
+                }
+            : new TextField<>(id, model, type);
+    }
+
+    public <T> TextField<T> passwordFieldWithConverter(
+            final String id, final IModel<T> model, final Class<T> type,
+            final @NonNull IConverter<T> converter) {
         return new TextField<T>(id, model, type) {
             private static final long serialVersionUID = 1L;
             @SuppressWarnings("unchecked")
@@ -509,7 +566,15 @@ public class Wkt {
                     super.error(error);
                 }
             }
+            @Override protected void onComponentTag(final ComponentTag tag) {
+                Attributes.set(tag, "type", "password");
+                super.onComponentTag(tag);
+            }
+            @Override protected String[] getInputTypes() {
+                return new String[] {"password"};
+            }
         };
+
     }
 
     // -- FOCUS UTILITY
@@ -554,5 +619,7 @@ public class Wkt {
                 ? String.format("Wicket.Event.publish(Isis.Topic.%s, '%s')", topic.name(), containerId)
                 : String.format("Wicket.Event.publish(Isis.Topic.%s)", topic.name());
     }
+
+
 
 }

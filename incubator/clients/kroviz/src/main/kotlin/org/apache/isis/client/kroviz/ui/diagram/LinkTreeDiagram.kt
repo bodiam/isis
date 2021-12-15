@@ -26,12 +26,13 @@ import org.apache.isis.client.kroviz.to.HasLinks
 import org.apache.isis.client.kroviz.to.Property
 import org.apache.isis.client.kroviz.to.Relation
 import org.apache.isis.client.kroviz.to.Represention
+import org.apache.isis.client.kroviz.ui.core.SessionManager
 import org.apache.isis.client.kroviz.ui.core.UiManager
 import org.apache.isis.client.kroviz.utils.StringUtils
 
 object LinkTreeDiagram {
 
-    private val protocolHostPort = UiManager.getBaseUrl()
+    private val protocolHostPort = SessionManager.getBaseUrl()
 
     fun build(aggregator: BaseAggregator): String {
         val pc = PumlCode()
@@ -47,10 +48,10 @@ object LinkTreeDiagram {
     private fun toPumlCode(node: Node, level: Int): String {
         val url = node.name
         val rs = ResourceSpecification(url)
-        val le = UiManager.getEventStore().findBy(rs)
+        val le = SessionManager.getEventStore().findBy(rs)
         val pc = PumlCode()
         if (le != null) {
-            val title = StringUtils.shortTitle(url, protocolHostPort)
+            val title = StringUtils.shortTitle(url)
             pc.addStereotype(le.type)
             pc.addLink(url, title)
             pc.addHorizontalLine()
@@ -78,7 +79,7 @@ object LinkTreeDiagram {
                 obj.links.forEach {
                     if (it.relation() != Relation.SELF) {
                         val url = it.href
-                        val title = StringUtils.shortTitle(url, protocolHostPort)
+                        val title = StringUtils.shortTitle(url)
                         pc.addLink(url, title)
                     }
                 }

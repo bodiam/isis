@@ -22,10 +22,11 @@ import javax.inject.Named;
 
 import org.springframework.stereotype.Component;
 
-import org.apache.isis.applib.adapters.ValueSemanticsAbstract;
-import org.apache.isis.applib.adapters.EncoderDecoder;
-import org.apache.isis.applib.adapters.Parser;
-import org.apache.isis.applib.adapters.Renderer;
+import org.apache.isis.applib.value.semantics.EncoderDecoder;
+import org.apache.isis.applib.value.semantics.Parser;
+import org.apache.isis.applib.value.semantics.Renderer;
+import org.apache.isis.applib.value.semantics.ValueSemanticsAbstract;
+import org.apache.isis.commons.collections.Can;
 import org.apache.isis.schema.common.v2.ValueType;
 import org.apache.isis.valuetypes.markdown.applib.value.Markdown;
 
@@ -94,6 +95,13 @@ implements
     @Override
     public int typicalLength() {
         return 0;
+    }
+
+    @Override
+    public Can<Markdown> getExamples() {
+        return Can.of(
+                Markdown.valueOf("a Markdown"),
+                Markdown.valueOf("another Markdown"));
     }
 
 }

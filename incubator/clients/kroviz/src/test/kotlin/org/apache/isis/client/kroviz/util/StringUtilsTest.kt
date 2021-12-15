@@ -1,6 +1,7 @@
 package org.apache.isis.client.kroviz.util
 
 import org.apache.isis.client.kroviz.ui.core.Constants
+import org.apache.isis.client.kroviz.ui.core.SessionManager
 import org.apache.isis.client.kroviz.ui.core.UiManager
 import org.apache.isis.client.kroviz.utils.StringUtils
 import kotlin.test.Test
@@ -11,16 +12,16 @@ class StringUtilsTest {
     @Test
     fun testShortTitle() {
         // given
-        UiManager.login(Constants.demoUrl, Constants.demoUser, Constants.demoPass)
+        SessionManager.login(Constants.demoUrl, Constants.demoUser, Constants.demoPass)
         val url = "http://localhost:8080/restful/domain-types/demo.JavaLangStrings/collections/entities"
 
         // when
-        val protocolHostPort = UiManager.getBaseUrl()
+        val protocolHostPort = SessionManager.getBaseUrl()
         // then
         assertTrue(protocolHostPort.startsWith("http://"))
 
         // when
-        val actual = StringUtils.shortTitle(url, protocolHostPort)
+        val actual = StringUtils.shortTitle(url)
         // then
         val expected = "/domain-types/demo.JavaLangStrings/collections/entities"
         assertEquals(expected, actual)

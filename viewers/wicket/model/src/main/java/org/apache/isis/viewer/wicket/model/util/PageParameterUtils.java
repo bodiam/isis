@@ -36,10 +36,12 @@ import org.apache.isis.applib.Identifier;
 import org.apache.isis.applib.annotation.Where;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.commons.collections.Can;
+import org.apache.isis.commons.collections.ImmutableEnumSet;
+import org.apache.isis.commons.internal.base._Strings;
 import org.apache.isis.commons.internal.primitives._Ints;
 import org.apache.isis.core.metamodel.context.MetaModelContext;
 import org.apache.isis.core.metamodel.facets.object.encodeable.EncodableFacet;
-import org.apache.isis.core.metamodel.spec.ActionType;
+import org.apache.isis.core.metamodel.spec.ActionScope;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
 import org.apache.isis.core.metamodel.spec.ManagedObjects;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
@@ -132,6 +134,12 @@ public class PageParameterUtils {
 
     // -- FACTORY METHODS FOR PAGE PARAMETERS
 
+    public static PageParameters createPageParametersForBookmark(final Bookmark bookmark) {
+        val pageParameters = PageParameterUtils.newPageParameters();
+        PageParameterNames.OBJECT_OID.addStringTo(pageParameters, bookmark.stringify());
+        return pageParameters;
+    }
+
     /**
      * Factory method for creating {@link PageParameters} to represent an
      * object.
@@ -175,6 +183,13 @@ public class PageParameterUtils {
         return pageParameters;
     }
 
+    public static Optional<Bookmark> toBookmark(final PageParameters pageParameters) {
+        val oidStr = PageParameterNames.OBJECT_OID.getStringFrom(pageParameters);
+        return _Strings.isEmpty(oidStr)
+                ? Optional.empty()
+                : Optional.of(Bookmark.parseElseFail(oidStr));
+    }
+
     // -- HELPERS
 
     private static PageParameters createPageParameters(final ManagedObject adapter, final ObjectAction objectAction) {
@@ -185,8 +200,8 @@ public class PageParameterUtils {
         .ifPresent(oidStr->
             PageParameterNames.OBJECT_OID.addStringTo(pageParameters, oidStr));
 
-        val actionType = objectAction.getType();
-        PageParameterNames.ACTION_TYPE.addEnumTo(pageParameters, actionType);
+        val actionScope = objectAction.getScope();
+        PageParameterNames.ACTION_TYPE.addEnumTo(pageParameters, actionScope);
 
         val actionOnTypeSpec = objectAction.getDeclaringType();
         if (actionOnTypeSpec != null) {
@@ -221,12 +236,12 @@ public class PageParameterUtils {
         val owningLogicalTypeName = PageParameterNames.ACTION_OWNING_SPEC.getStringFrom(pageParameters);
         val owningLogicalType = specLoader.lookupLogicalTypeElseFail(owningLogicalTypeName);
 
-        final ActionType actionType = PageParameterNames.ACTION_TYPE.getEnumFrom(pageParameters, ActionType.class);
+        final ActionScope actionScope = PageParameterNames.ACTION_TYPE.getEnumFrom(pageParameters, ActionScope.class);
         final String actionNameParms = PageParameterNames.ACTION_ID.getStringFrom(pageParameters);
 
         val action = specLoader
                 .specForLogicalTypeElseFail(owningLogicalType)
-                .getActionElseFail(actionNameParms, actionType);
+                .getActionElseFail(actionNameParms, ImmutableEnumSet.of(actionScope));
 
         return action;
     }
@@ -367,6 +382,7 @@ public class PageParameterUtils {
         val paramValue = decodeArg(mmc, actionParam.getElementType(), oidStrEncoded);
         actionModel.setParameterValue(actionParam, paramValue);
     }
+
 
 
 }

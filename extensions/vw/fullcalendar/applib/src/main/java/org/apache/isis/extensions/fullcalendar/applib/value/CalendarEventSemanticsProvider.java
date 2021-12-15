@@ -25,15 +25,16 @@ import java.time.ZoneId;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 
-import org.apache.isis.applib.adapters.DefaultsProvider;
-import org.apache.isis.applib.adapters.Renderer;
-import org.apache.isis.applib.adapters.ValueSemanticsAbstract;
 import org.apache.isis.applib.annotation.Action;
 import org.apache.isis.applib.annotation.ActionLayout;
 import org.apache.isis.applib.annotation.MemberSupport;
 import org.apache.isis.applib.annotation.ParameterLayout;
 import org.apache.isis.applib.annotation.PromptStyle;
 import org.apache.isis.applib.annotation.SemanticsOf;
+import org.apache.isis.applib.value.semantics.DefaultsProvider;
+import org.apache.isis.applib.value.semantics.Renderer;
+import org.apache.isis.applib.value.semantics.ValueSemanticsAbstract;
+import org.apache.isis.commons.collections.Can;
 import org.apache.isis.schema.common.v2.ValueType;
 
 import lombok.RequiredArgsConstructor;
@@ -59,7 +60,7 @@ implements
 
     @Override
     public ValueType getSchemaValueType() {
-        return UNREPRESENTED;
+        return ValueType.COMPOSITE;
     }
 
     // -- DEFAULTS PROVIDER
@@ -89,6 +90,14 @@ implements
     @Override
     public String simpleTextPresentation(final Context context, final CalendarEvent value) {
         return render(value, v->v.toString());
+    }
+
+    // -- EXAMPLES
+
+    @Override
+    public Can<CalendarEvent> getExamples() {
+        //TODO provide examples
+        return Can.empty();
     }
 
     // -- EMBEDDING
@@ -176,8 +185,5 @@ implements
         }
 
     }
-
-
-
 
 }

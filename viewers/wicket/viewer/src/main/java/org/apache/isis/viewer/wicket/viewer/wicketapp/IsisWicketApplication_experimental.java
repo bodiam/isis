@@ -166,6 +166,4 @@ final class IsisWicketApplication_experimental {
                 references.toArray(new CssResourceReference[]{}));
     }
 
-
-
 }

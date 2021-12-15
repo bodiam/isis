@@ -18,20 +18,34 @@
  */
 package org.apache.isis.client.kroviz.ui.dialog
 
+import io.kvision.panel.SimplePanel
 import org.apache.isis.client.kroviz.to.ValueType
 import org.apache.isis.client.kroviz.ui.core.FormItem
 import org.apache.isis.client.kroviz.ui.core.RoDialog
+import org.apache.isis.client.kroviz.ui.core.UiManager
 
-class BrowserWindow(val url: String) : Command() {
+class BrowserWindow(val url: String) : Controller() {
 
-    fun open() {
+    init {
         val formItems = mutableListOf<FormItem>()
         formItems.add(FormItem("URL", ValueType.IFRAME, url))
-        RoDialog(
-                caption = url,
-                items = formItems,
-                command = this,
-                defaultAction = "Visualize").open()
+        dialog = RoDialog(
+            caption = url,
+            items = formItems,
+            controller = this,
+            widthPerc = 70,
+            heightPerc = 70,
+            defaultAction = "Pin"
+        )
+    }
+
+    fun execute() {
+        pin()
+    }
+
+    private fun pin() {
+        UiManager.add(url, dialog.formPanel as SimplePanel)
+        dialog.close()
     }
 
 }

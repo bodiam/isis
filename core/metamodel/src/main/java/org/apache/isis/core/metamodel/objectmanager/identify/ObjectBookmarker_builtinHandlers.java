@@ -23,11 +23,13 @@ import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-import org.apache.isis.applib.adapters.EncoderDecoder;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.applib.services.bookmark.Oid;
+import org.apache.isis.applib.value.semantics.EncoderDecoder;
 import org.apache.isis.commons.internal.base._Bytes;
 import org.apache.isis.commons.internal.base._Strings;
+import org.apache.isis.commons.internal.debug._Debug;
+import org.apache.isis.commons.internal.debug.xray.XrayUi;
 import org.apache.isis.commons.internal.exceptions._Exceptions;
 import org.apache.isis.core.metamodel.facets.object.entity.EntityFacet;
 import org.apache.isis.core.metamodel.facets.object.value.ValueFacet;
@@ -37,6 +39,7 @@ import org.apache.isis.core.metamodel.spec.ManagedObject;
 
 import lombok.SneakyThrows;
 import lombok.val;
+import lombok.extern.log4j.Log4j2;
 
 class ObjectBookmarker_builtinHandlers {
 
@@ -75,6 +78,7 @@ class ObjectBookmarker_builtinHandlers {
 
     }
 
+    @Log4j2
     static class BookmarkForEntities implements Handler {
 
         @Override
@@ -85,8 +89,8 @@ class ObjectBookmarker_builtinHandlers {
         @Override
         public Bookmark handle(final ManagedObject managedObject) {
             val spec = managedObject.getSpecification();
-            val pojo = managedObject.getPojo();
-            if(pojo==null) {
+            val entityPojo = managedObject.getPojo();
+            if(entityPojo==null) {
                 val msg = String.format("entity '%s' is null, cannot identify", managedObject);
                 throw _Exceptions.unrecoverable(msg);
             }
@@ -95,7 +99,32 @@ class ObjectBookmarker_builtinHandlers {
                 val msg = String.format("entity '%s' has no EntityFacet associated", managedObject);
                 throw _Exceptions.unrecoverable(msg);
             }
-            val identifier = entityFacet.identifierFor(spec, pojo);
+
+            // fail early when detached entities are detected
+            // should have been re-fetched at start of this request-cycle
+            if(!managedObject.isBookmarkMemoized()
+//                    && EntityUtil.getPersistenceStandard(managedObject)
+//                        .map(PersistenceStandard::isJdo)
+//                        .orElse(false)
+                    && !entityFacet.getEntityState(entityPojo).isAttached()) {
+
+                _Debug.onCondition(XrayUi.isXrayEnabled(), ()->{
+                    _Debug.log("detached entity detected %s", entityPojo);
+                });
+
+                val msg = String.format(
+                        "The persistence layer does not recognize given object of type %s, "
+                        + "meaning the object has no identifier that associates it with the persistence layer. "
+                        + "(most likely, because the object is detached, eg. was not persisted after being new-ed up)",
+                        entityPojo.getClass().getName());
+
+                // in case of the exception getting swallowed, also write a log
+                log.error(msg);
+
+                throw _Exceptions.illegalArgument(msg);
+            }
+
+            val identifier = entityFacet.identifierFor(spec, entityPojo);
             return Bookmark.forLogicalTypeAndIdentifier(spec.getLogicalType(), identifier);
         }
 
@@ -173,10 +202,14 @@ class ObjectBookmarker_builtinHandlers {
 
         @Override
         public Bookmark handle(final ManagedObject managedObject) {
+
+            if(managedObject.isBookmarkMemoized()) {
+                return managedObject.getBookmark().get();
+            }
+
             val spec = managedObject.getSpecification();
             val recreatableObjectFacet = spec.getFacet(ViewModelFacet.class);
-            val identifier = recreatableObjectFacet.memento(managedObject.getPojo());
-            return Bookmark.forLogicalTypeAndIdentifier(spec.getLogicalType(), identifier);
+            return recreatableObjectFacet.serializeToBookmark(managedObject);
         }
 
     }

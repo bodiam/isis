@@ -22,47 +22,49 @@ import io.kvision.core.StringPair
 import io.kvision.form.select.SimpleSelect
 import io.kvision.form.text.Password
 import io.kvision.form.text.Text
+import org.apache.isis.client.kroviz.core.event.ReplayController
 import org.apache.isis.client.kroviz.to.Link
 import org.apache.isis.client.kroviz.to.ValueType
-import org.apache.isis.client.kroviz.ui.core.Constants
-import org.apache.isis.client.kroviz.ui.core.FormItem
-import org.apache.isis.client.kroviz.ui.core.RoDialog
-import org.apache.isis.client.kroviz.ui.core.UiManager
+import org.apache.isis.client.kroviz.ui.core.*
 
-class LoginPrompt : Command() {
-
-    private lateinit var form: RoDialog
+class LoginPrompt(val nextController: Controller? = null) : Controller() {
 
     //Default values
     private var url = Constants.demoUrl
     private var username = Constants.demoUser
     private var password = Constants.demoPass
 
-    fun open() {
+    override fun open() {
         val formItems = mutableListOf<FormItem>()
         val urlList = mutableListOf<StringPair>()
         urlList.add(StringPair(Constants.demoUrl, Constants.demoUrl))
         urlList.add(StringPair(Constants.demoUrlRemote, Constants.demoUrlRemote))
+        urlList.add(StringPair(Constants.domoxUrl, Constants.domoxUrl))
         formItems.add(FormItem("Url", ValueType.SIMPLE_SELECT, urlList))
         formItems.add(FormItem("User", ValueType.TEXT, username))
         formItems.add(FormItem("Password", ValueType.PASSWORD, password))
-        form = RoDialog(caption = "Connect", items = formItems, command = this, heightPerc = 27)
+        dialog = RoDialog(caption = "Connect", items = formItems, controller = this, heightPerc = 27)
         val at = UiManager.position!!
-        form.open(at)
+        dialog.open(at)
     }
 
     override fun execute(action: String?) {
         extractUserInput()
-        UiManager.login(url, username, password)
-        val link = Link(href = url + Constants.restInfix)
-        invoke(link)
-        UiManager.closeDialog(form)
+        if (nextController is ReplayController) {
+            nextController.initUnderTest(url, username, password)
+            nextController.open()
+        } else {
+            SessionManager.login(url, username, password)
+            val link = Link(href = url + Constants.restInfix)
+            invoke(link)
+            UiManager.closeDialog(dialog)
+        }
     }
 
     private fun extractUserInput() {
         //TODO function has a side effect, ie. changes variable values
         var key: String?
-        val formPanel = form.formPanel
+        val formPanel = dialog.formPanel
         val kids = formPanel!!.getChildren()
         //iterate over FormItems (0,1,2) but not Buttons(3,4)
         for (i in kids) {

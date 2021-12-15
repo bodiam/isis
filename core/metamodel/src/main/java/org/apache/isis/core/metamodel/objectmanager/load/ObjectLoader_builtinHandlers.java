@@ -160,8 +160,8 @@ final class ObjectLoader_builtinHandlers {
 
             val spec = objectLoadRequest.getObjectSpecification();
 
-            val memento = objectLoadRequest.getObjectIdentifier();
-            val bytes = _Bytes.ofUrlBase64.apply(_Strings.toBytes(memento, StandardCharsets.UTF_8));
+            val bookmark = objectLoadRequest.getBookmark();
+            val bytes = _Bytes.ofUrlBase64.apply(_Strings.toBytes(bookmark.getIdentifier(), StandardCharsets.UTF_8));
             val ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
             val viewModelPojo = ois.readObject();
             ois.close();
@@ -194,16 +194,16 @@ final class ObjectLoader_builtinHandlers {
                         "ObjectSpecification is missing a ViewModelFacet: %s", spec);
             }
 
-            val memento = objectLoadRequest.getObjectIdentifier();
+            val bookmark = objectLoadRequest.getBookmark();
             final Object viewModelPojo;
             if(viewModelFacet.getRecreationMechanism().isInitializes()) {
                 viewModelPojo = this.instantiateAndInjectServices(spec);
-                viewModelFacet.initialize(viewModelPojo, memento);
+                viewModelFacet.initialize(viewModelPojo, bookmark);
             } else {
-                viewModelPojo = viewModelFacet.instantiate(spec.getCorrespondingClass(), memento);
+                viewModelPojo = viewModelFacet.instantiate(spec.getCorrespondingClass(), bookmark);
             }
 
-            return ManagedObject.of(spec, viewModelPojo);
+            return ManagedObject.bookmarked(spec, viewModelPojo, bookmark);
         }
 
         private Object instantiateAndInjectServices(final ObjectSpecification spec) {
@@ -258,9 +258,8 @@ final class ObjectLoader_builtinHandlers {
                         "ObjectSpecification is missing an EntityFacet: %s", spec);
             }
 
-            val identifier = objectLoadRequest.getObjectIdentifier();
-            val entity = entityFacet.fetchByIdentifier(spec, identifier);
-
+            val bookmark = objectLoadRequest.getBookmark();
+            val entity = entityFacet.fetchByIdentifier(spec, bookmark);
             return entity;
         }
 
@@ -283,7 +282,7 @@ final class ObjectLoader_builtinHandlers {
 
             // unknown object load request
 
-            throw _Exceptions.illegalArgument(
+             throw _Exceptions.illegalArgument(
                     "None of the registered ObjectLoaders knows how to load this object. (loader: %s loading %s)",
                         this.getClass().getName(), objectLoadRequest);
 

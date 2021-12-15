@@ -24,6 +24,7 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
 import javax.persistence.Transient;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import org.apache.isis.applib.IsisModuleApplib;
 import org.apache.isis.applib.annotation.DomainObject;
@@ -36,8 +37,11 @@ import org.apache.isis.applib.events.lifecycle.ObjectPersistingEvent;
 import org.apache.isis.applib.events.lifecycle.ObjectRemovingEvent;
 import org.apache.isis.applib.events.lifecycle.ObjectUpdatedEvent;
 import org.apache.isis.applib.events.lifecycle.ObjectUpdatingEvent;
+import org.apache.isis.applib.jaxb.PersistentEntityAdapter;
 import org.apache.isis.persistence.jpa.applib.integration.IsisEntityListener;
 import org.apache.isis.testdomain.model.stereotypes.MyService;
+import org.apache.isis.testdomain.util.dto.BookDto;
+import org.apache.isis.testdomain.util.dto.IBook;
 import org.apache.isis.testdomain.util.kv.KVStoreForTesting;
 
 import lombok.AccessLevel;
@@ -66,10 +70,13 @@ import lombok.extern.log4j.Log4j2;
         , updatingLifecycleEvent = JpaBook.UpdatingLifecycleEvent.class
         , updatedLifecycleEvent = JpaBook.UpdatedLifecycleEvent.class
         , removingLifecycleEvent = JpaBook.RemovingLifecycleEvent.class)
+@XmlJavaTypeAdapter(PersistentEntityAdapter.class)
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @ToString(callSuper = true)
 @Log4j2
-public class JpaBook extends JpaProduct {
+public class JpaBook
+extends JpaProduct
+implements IBook {
 
     // -- DOMAIN EVENTS
     public static class ActionDomainEvent extends IsisModuleApplib.ActionDomainEvent<JpaBook> {};
@@ -101,11 +108,6 @@ public class JpaBook extends JpaProduct {
     }
     // --
 
-    @Override
-    public String title() {
-        return toString();
-    }
-
     public static JpaBook of(
             final String name,
             final String description,
@@ -115,6 +117,16 @@ public class JpaBook extends JpaProduct {
             final String publisher) {
 
         return new JpaBook(name, description, price, author, isbn, publisher);
+    }
+
+    public static JpaBook fromDto(final BookDto dto) {
+        return JpaBook.of(dto.getName(), dto.getDescription(), dto.getPrice(),
+                dto.getAuthor(), dto.getIsbn(), dto.getPublisher());
+    }
+
+    @Override
+    public String title() {
+        return IBook.super.title();
     }
 
     @Property

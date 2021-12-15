@@ -24,11 +24,13 @@ import javax.inject.Named;
 
 import org.springframework.stereotype.Component;
 
-import org.apache.isis.applib.adapters.ValueSemanticsAbstract;
-import org.apache.isis.applib.adapters.EncoderDecoder;
-import org.apache.isis.applib.adapters.Renderer;
-import org.apache.isis.applib.adapters.ValueSemanticsProvider;
 import org.apache.isis.applib.value.Clob;
+import org.apache.isis.applib.value.NamedWithMimeType.CommonMimeType;
+import org.apache.isis.applib.value.semantics.EncoderDecoder;
+import org.apache.isis.applib.value.semantics.Renderer;
+import org.apache.isis.applib.value.semantics.ValueSemanticsAbstract;
+import org.apache.isis.applib.value.semantics.ValueSemanticsProvider;
+import org.apache.isis.commons.collections.Can;
 import org.apache.isis.schema.common.v2.ValueType;
 
 @Component
@@ -75,6 +77,13 @@ implements
         } catch (MimeTypeParseException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Can<Clob> getExamples() {
+        return Can.of(
+                Clob.of("a Clob", CommonMimeType.TXT, "abc"),
+                Clob.of("another Clob", CommonMimeType.TXT, "ef"));
     }
 
 }

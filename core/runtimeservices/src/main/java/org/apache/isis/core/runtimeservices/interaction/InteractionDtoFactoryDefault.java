@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 
 import org.apache.isis.applib.annotation.PriorityPrecedence;
 import org.apache.isis.applib.services.bookmark.Bookmark;
-import org.apache.isis.applib.services.bookmark.BookmarkService;
 import org.apache.isis.applib.services.iactn.Interaction;
 import org.apache.isis.applib.services.iactn.InteractionProvider;
 import org.apache.isis.applib.services.user.UserService;
@@ -42,8 +41,9 @@ import org.apache.isis.core.metamodel.execution.InteractionInternal;
 import org.apache.isis.core.metamodel.interactions.InteractionHead;
 import org.apache.isis.core.metamodel.services.command.CommandDtoFactory;
 import org.apache.isis.core.metamodel.services.ixn.InteractionDtoFactory;
+import org.apache.isis.core.metamodel.services.schema.SchemaValueMarshaller;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
-import org.apache.isis.core.metamodel.spec.ObjectSpecification;
+import org.apache.isis.core.metamodel.spec.ManagedObjects;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
 import org.apache.isis.core.metamodel.spec.feature.OneToOneAssociation;
 import org.apache.isis.schema.cmd.v2.ActionDto;
@@ -68,7 +68,7 @@ import lombok.val;
 public class InteractionDtoFactoryDefault implements InteractionDtoFactory {
 
     @Inject private CommandDtoFactory commandDtoServiceInternal;
-    @Inject private BookmarkService bookmarkService;
+    @Inject private SchemaValueMarshaller valueMarshaller;
     @Inject private javax.inject.Provider<InteractionProvider> interactionProviderProvider;
     @Inject private UserService userService;
 
@@ -108,16 +108,21 @@ public class InteractionDtoFactoryDefault implements InteractionDtoFactory {
     public ActionInvocationDto updateResult(
             final ActionInvocationDto actionInvocationDto,
             final ObjectAction objectAction,
-            final Object resultPojo) {
+            final ManagedObject resultObject) {
 
-        final ObjectSpecification returnSpec = objectAction.getReturnType();
-        final Class<?> returnType = returnSpec.getCorrespondingClass();
+        val elementSpec = objectAction.getElementType();
 
-        InteractionDtoUtils.addReturn(
-                actionInvocationDto, returnType, resultPojo, bookmarkService);
-
+        if(objectAction.getReturnType().isNotCollection()) { //XXX assuming this is the right way to check for scalar
+            //scalar
+            valueMarshaller.recordActionResultScalar(actionInvocationDto, elementSpec, resultObject);
+        } else {
+            //non-scalar
+            val values = ManagedObjects.unpack(elementSpec, resultObject);
+            valueMarshaller.recordActionResultNonScalar(actionInvocationDto, elementSpec, values);
+        }
         return actionInvocationDto;
     }
+
 
     @Override
     public PropertyEditDto asPropertyEditDto(
@@ -146,8 +151,5 @@ public class InteractionDtoFactoryDefault implements InteractionDtoFactory {
                 newValue, currentUser
                 );
     }
-
-
-
 
 }

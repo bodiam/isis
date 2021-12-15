@@ -46,11 +46,13 @@ import org.apache.isis.core.metamodel.facets.members.layout.group.LayoutGroupFac
 import org.apache.isis.core.metamodel.facets.object.promptStyle.PromptStyleFacet;
 import org.apache.isis.core.metamodel.interactions.InteractionHead;
 import org.apache.isis.core.metamodel.interactions.managed.ActionInteractionHead;
-import org.apache.isis.core.metamodel.spec.ActionType;
+import org.apache.isis.core.metamodel.spec.ActionScope;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
 import org.apache.isis.core.metamodel.spec.ManagedObjects;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.spec.feature.memento.ActionMemento;
+import org.apache.isis.core.metamodel.specloader.specimpl.ObjectActionDefault;
+import org.apache.isis.core.metamodel.specloader.specimpl.ObjectActionMixedIn;
 
 import static org.apache.isis.commons.internal.base._NullSafe.stream;
 
@@ -73,9 +75,17 @@ public interface ObjectAction extends ObjectMember {
         && ObjectAction.Util.isNoParameters(this);
     }
 
-    ActionType getType();
+    ActionScope getScope();
 
     boolean isPrototype();
+
+    /**
+     * Whether this {@link ObjectAction} instance represents a mixin main method,
+     * usually of type {@link ObjectActionDefault}, peered by an {@link ObjectActionMixedIn}.
+     * <p>
+     * Such instances are used for populating the meta-model.
+     */
+    boolean isDeclaredOnMixin();
 
     /**
      * Returns the specifications for the return type.
@@ -354,8 +364,8 @@ public interface ObjectAction extends ObjectMember {
 
     public static final class Predicates {
 
-        public static Predicate<ObjectAction> ofActionType(final ActionType type) {
-            return (final ObjectAction oa) -> oa.getType() == type;
+        public static Predicate<ObjectAction> ofActionType(final ActionScope scope) {
+            return (final ObjectAction oa) -> oa.getScope() == scope;
         }
 
         public static Predicate<ObjectAction> isPositioned(

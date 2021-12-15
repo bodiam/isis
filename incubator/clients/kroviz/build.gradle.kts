@@ -102,6 +102,10 @@ kotlin {
         implementation("io.kvision:kvision-maps:$kvisionVersion")
         implementation(npm("xmltojson", "1.3.5", false))
         implementation(npm("flatted", "3.2.2", false))
+        implementation(npm("diff", "5.0.0", false))
+        implementation(npm("diff2html", "3.4.13", false))
+        implementation(npm("xml-beautify", "1.1.2", false))
+        implementation(npm("xterm", "4.15.0", false))
     }
     sourceSets["test"].dependencies {
         implementation(kotlin("test-js"))

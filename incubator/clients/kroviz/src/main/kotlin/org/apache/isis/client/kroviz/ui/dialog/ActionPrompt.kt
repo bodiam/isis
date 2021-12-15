@@ -30,17 +30,15 @@ import io.kvision.form.select.SimpleSelect
 import io.kvision.form.text.TextArea
 import org.apache.isis.client.kroviz.ui.core.RoDialog
 
-class ActionPrompt(val action: Action) : Command() {
-
-    private lateinit var form: RoDialog
+class ActionPrompt(val action: Action) : Controller() {
 
     fun open(at: Point) {
         val formItems = buildFormItems()
-        form = RoDialog(
+        dialog = RoDialog(
                 caption = buildLabel(),
                 items = formItems,
-                command = this)
-        form.open(at)
+                controller = this)
+        dialog.open(at)
     }
 
     override fun execute(action:String?) {
@@ -81,11 +79,11 @@ class ActionPrompt(val action: Action) : Command() {
     }
 
     private fun extractUserInput(): Link {
-        //IMPROVE function has a side effect, ie. amends link with arguments
+        //IMPROVE function has a side effect, i.e. amends link with arguments
         val link = action.getInvokeLink()!!
         var value: String? = null
         var key: String? = null
-        val formPanel = form.formPanel
+        val formPanel = dialog.formPanel
         val kids = formPanel!!.getChildren()
         //iterate over FormItems (0,1) but not Buttons(2,3)
         for (i in kids) {

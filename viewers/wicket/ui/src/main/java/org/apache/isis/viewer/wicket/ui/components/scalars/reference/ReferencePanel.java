@@ -104,9 +104,9 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
 
         entityLink.setRequired(getModel().isRequired());
         this.select2 = createSelect2AndSemantics();
-        entityLink.addOrReplace(select2.component());
+        entityLink.addOrReplace(select2.asComponent());
 
-        syncWithInput();
+        //syncWithInput();
 
         entityLink.setOutputMarkupId(true);
 
@@ -151,40 +151,13 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
 
     @Override
     protected InlinePromptConfig getInlinePromptConfig() {
-        return InlinePromptConfig.supportedAndHide(select2.component());
+        return InlinePromptConfig.supportedAndHide(select2.asComponent());
     }
 
     @Override
     protected IModel<String> obtainInlinePromptModel() {
-        final IModel<ObjectMemento> model = select2.getModel();
-
-        return new IModel<String>() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public String getObject() {
-                val memento = model.getObject();
-                if(memento == null) {
-                    return null;
-                }
-                val adapter = ReferencePanel.super.getCommonContext().reconstructObject(memento);
-                return adapter != null ? adapter.titleString() : null;
-            }
-
-            @Override
-            public void setObject(final String s) {
-                // ignore
-            }
-
-            @Override
-            public void detach() {
-                // ignore
-            }
-        };
+        return select2.obtainInlinePromptModel();
     }
-
-
-
 
 
     // //////////////////////////////////////
@@ -208,11 +181,11 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
     @Override
     protected void onInitializeReadonly(final String disableReason) {
         super.onInitializeReadonly(disableReason);
-        syncWithInput();
         val entityLinkModel = (HasRenderingHints) entityLink.getModel();
         entityLinkModel.toViewMode();
         entityLink.setEnabled(false);
         Tooltips.addTooltip(entityLink, disableReason);
+        syncWithInput();
     }
 
     @Override
@@ -231,13 +204,6 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
         entityLink.add(new AttributeModifier("title", Model.of("")));
     }
 
-
-
-    // //////////////////////////////////////
-    // syncWithInput
-    // //////////////////////////////////////
-
-
     // called from onInitialize*
     // (was previous called by EntityLinkSelect2Panel in onBeforeRender, this responsibility now moved)
     private void syncWithInput() {
@@ -254,26 +220,19 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
                     .findComponentFactory(ComponentType.ENTITY_ICON_AND_TITLE, scalarModel);
             val component = componentFactory
                     .createComponent(ComponentType.ENTITY_ICON_AND_TITLE.getId(), scalarModel);
-
             componentForRegular.addOrReplace(component);
 
-            boolean inlinePrompt = scalarModel.isInlinePrompt();
-            if(inlinePrompt) {
+            val isInlinePrompt = scalarModel.isInlinePrompt();
+            if(isInlinePrompt) {
                 // bit of a hack... allows us to suppress the title using CSS
                 Wkt.cssAppend(component, "inlinePrompt");
             }
 
-            if (adapter != null) {
-
+            if(adapter != null
+                    || isInlinePrompt) {
                 Components.permanentlyHide(componentForRegular, "entityTitleIfNull");
-
             } else {
-
-                if(inlinePrompt) {
-                    Components.permanentlyHide(componentForRegular, "entityTitleIfNull");
-                } else {
-                    Wkt.labelAdd(componentForRegular, "entityTitleIfNull", "(none)");
-                }
+                Wkt.labelAdd(componentForRegular, "entityTitleIfNull", "(none)");
             }
 
         }
@@ -304,12 +263,10 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
                 select2.clearInput();
             }
 
-            if(getComponentForRegular() != null) {
-                Components.permanentlyHide((MarkupContainer)getComponentForRegular(), ID_ENTITY_ICON_TITLE);
+            if(componentForRegular != null) {
+                Components.permanentlyHide(componentForRegular, ID_ENTITY_ICON_TITLE);
                 Components.permanentlyHide(componentForRegular, "entityTitleIfNull");
             }
-
-
 
             // syncUsability
             if(select2 != null) {
@@ -354,15 +311,11 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
     // called by setProviderAndCurrAndPending
     @Override
     protected void syncIfNull(final Select2 select2) {
-        final ObjectMemento curr = select2.getModelObject();
-
-        if(!getModel().isCollection()) {
-
-            if(curr == null) {
-                select2.getModel().setObject(null);
+        if(getModel().isScalar()) {
+            if(select2.isEmpty()) {
+                select2.clear(); // why?
                 getModel().setObject(null);
             }
-
         }
     }
 
@@ -383,10 +336,8 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
         if(isEditableWithEitherAutoCompleteOrChoices()) {
 
             // flush changes to pending
-            ObjectMemento convertedInput = select2.getConvertedInput();
-            select2.getModel().setObject(convertedInput);
 
-            val adapter = super.getCommonContext().reconstructObject(convertedInput);
+            val adapter = select2.getConvertedInputValue();
             getModel().setObject(adapter);
             getModel().clearPending();
         }
@@ -429,13 +380,6 @@ public class ReferencePanel extends ScalarPanelSelectAbstract {
                 (typeOfSpecification != null)? typeOfSpecification.getFacet(AutoCompleteFacet.class):null;
                 return autoCompleteFacet != null;
     }
-
-
-    @Override
-    protected String getScalarPanelType() {
-        return "referencePanel";
-    }
-
 
 }
 

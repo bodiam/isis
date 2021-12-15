@@ -45,8 +45,8 @@ import org.apache.isis.applib.graph.tree.TreeNode;
 import org.apache.isis.applib.graph.tree.TreePath;
 import org.apache.isis.applib.services.bookmark.Bookmark;
 import org.apache.isis.applib.services.factory.FactoryService;
+import org.apache.isis.commons.functional.IndexedFunction;
 import org.apache.isis.commons.internal.collections._Lists;
-import org.apache.isis.commons.internal.functions._Functions;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
 import org.apache.isis.core.metamodel.spec.ManagedObjects;
 import org.apache.isis.core.runtime.context.IsisAppCommonContext;
@@ -312,7 +312,7 @@ class IsisToWicketTreeAdapter {
         }
 
         private Function<Object, TreeModel> newPojoToTreeModelMapper(final TreeModel parent) {
-            return _Functions.indexedZeroBase((indexWithinSiblings, pojo)->
+            return IndexedFunction.zeroBased((indexWithinSiblings, pojo)->
             wrap(pojo, parent.getTreePath().append(indexWithinSiblings)));
         }
 
@@ -402,7 +402,7 @@ class IsisToWicketTreeAdapter {
         private final TreePath treePath;
         private final int hashCode;
 
-        private final transient IsisAppCommonContext commonContext;
+        private transient IsisAppCommonContext commonContext;
 
         public LoadableDetachableTreeModel(final TreeModel tModel) {
             super(tModel);
@@ -418,6 +418,8 @@ class IsisToWicketTreeAdapter {
          */
         @Override
         protected TreeModel load() {
+
+            commonContext = CommonContextUtils.computeIfAbsent(commonContext);
 
             val oid = bookmark;
             val objAdapter = commonContext.getMetaModelContext()

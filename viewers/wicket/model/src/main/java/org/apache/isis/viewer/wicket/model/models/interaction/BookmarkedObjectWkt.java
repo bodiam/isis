@@ -46,7 +46,7 @@ extends ModelAbstract<ManagedObject> {
     @Getter private final Bookmark bookmark;
 
     /**
-     * Request scoped.
+     * Request scoped. No yet activated!
      */
     public static class ManagedObjectCache {
 
@@ -133,11 +133,19 @@ extends ModelAbstract<ManagedObject> {
         throw _Exceptions.unsupportedOperation("MangedObjectWkt is immuatable");
     }
 
-    public final ManagedObject getObjectAndAttachWhenEntity() {
+    /**
+     * Every request-cycle ends with a transaction commit,
+     * where JDO will automatically detach entities.
+     * For any inline <i>Property</i> edits a new AJAX requests gets created,
+     * which results in a new request-cycle, where an EntityPage instance
+     * is reused, that was already populated in the previous request-cycle.
+     * However, this time, all the contained entities are detached
+     * from the persistence layer and need to be re-fetched using their bookmarks.
+     */
+    public final ManagedObject getObjectAndRefetch() {
         //EntityUtil.assertAttachedWhenEntity()//guard
-
-        // even though initial loading seems attached, we need to check again
-        return EntityUtil.computeIfDetached(super.getObject(), this::reload);
+        val entityOrViewmodel = super.getObject();
+        return EntityUtil.computeIfDetached(entityOrViewmodel, this::reload);
     }
 
     @Override
@@ -146,7 +154,6 @@ extends ModelAbstract<ManagedObject> {
                 .map(cache->cache.computeIfAbsent(bookmark, this::loadDirect))
                 .orElseGet(()->loadDirect(bookmark));
     }
-
 
     // -- HELPER
 

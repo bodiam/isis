@@ -29,25 +29,24 @@ import org.springframework.stereotype.Service;
 
 import org.apache.isis.applib.annotation.PriorityPrecedence;
 import org.apache.isis.applib.services.bookmark.Bookmark;
-import org.apache.isis.applib.services.bookmark.BookmarkService;
 import org.apache.isis.applib.services.clock.ClockService;
 import org.apache.isis.applib.services.user.UserService;
 import org.apache.isis.applib.util.schema.CommandDtoUtils;
-import org.apache.isis.applib.util.schema.CommonDtoUtils;
 import org.apache.isis.commons.collections.Can;
 import org.apache.isis.commons.internal.exceptions._Exceptions;
 import org.apache.isis.core.metamodel.facetapi.FeatureType;
-import org.apache.isis.core.metamodel.facets.actions.action.invocation.CommandUtil;
+import org.apache.isis.core.metamodel.facets.actions.action.invocation.IdentifierUtil;
 import org.apache.isis.core.metamodel.interactions.InteractionHead;
 import org.apache.isis.core.metamodel.services.command.CommandDtoFactory;
+import org.apache.isis.core.metamodel.services.schema.SchemaValueMarshaller;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
 import org.apache.isis.core.metamodel.spec.ManagedObjects;
-import org.apache.isis.core.metamodel.spec.ManagedObjects.UnwrapUtil;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
 import org.apache.isis.core.metamodel.spec.feature.ObjectActionParameter;
 import org.apache.isis.core.metamodel.spec.feature.OneToOneAssociation;
 import org.apache.isis.schema.cmd.v2.ActionDto;
 import org.apache.isis.schema.cmd.v2.CommandDto;
+import org.apache.isis.schema.cmd.v2.ParamDto;
 import org.apache.isis.schema.cmd.v2.PropertyDto;
 import org.apache.isis.schema.common.v2.InteractionType;
 import org.apache.isis.schema.common.v2.OidsDto;
@@ -66,9 +65,9 @@ import lombok.val;
 @Qualifier("Default")
 public class CommandDtoFactoryDefault implements CommandDtoFactory {
 
-    @Inject BookmarkService bookmarkService;
-    @Inject ClockService clockService;
-    @Inject UserService userService;
+    @Inject private SchemaValueMarshaller valueMarshaller;
+    @Inject private ClockService clockService;
+    @Inject private UserService userService;
 
     @Override
     public CommandDto asCommandDto(
@@ -112,33 +111,34 @@ public class CommandDtoFactoryDefault implements CommandDtoFactory {
             final ActionDto actionDto,
             final Can<ManagedObject> argAdapters) {
 
-        actionDto.setLogicalMemberIdentifier(CommandUtil.logicalMemberIdentifierFor(objectAction));
-        actionDto.setMemberIdentifier(CommandUtil.memberIdentifierFor(objectAction));
+        actionDto.setLogicalMemberIdentifier(IdentifierUtil.logicalMemberIdentifierFor(objectAction));
+        actionDto.setMemberIdentifier(IdentifierUtil.memberIdentifierFor(objectAction));
 
         val actionParameters = objectAction.getParameters();
         for (int paramNum = 0; paramNum < actionParameters.size(); paramNum++) {
             final ObjectActionParameter actionParameter = actionParameters.getElseFail(paramNum);
 
-            final Object arg = argAdapters.get(paramNum)
-                    .map(argAdapter->argAdapter != null? argAdapter.getPojo(): null)
-                    .orElse(null);
+            val argAdapter = argAdapters.getElseFail(paramNum);
 
             // in case of non-scalar params returns the element type
-            val paramTypeOrElementType = actionParameter.getElementType().getCorrespondingClass();
+            val elementType = actionParameter.getElementType();
 
-            val paramDto = actionParameter.getFeatureType() == FeatureType.ACTION_PARAMETER_COLLECTION
-                    ? CommonDtoUtils.newParamDtoNonScalar(
-                            actionParameter.getStaticFriendlyName()
-                                .orElseThrow(_Exceptions::unexpectedCodeReach),
-                            paramTypeOrElementType,
-                            arg,
-                            bookmarkService)
-                    : CommonDtoUtils.newParamDto(
-                            actionParameter.getStaticFriendlyName()
-                                .orElseThrow(_Exceptions::unexpectedCodeReach),
-                            paramTypeOrElementType,
-                            arg,
-                            bookmarkService);
+            val paramDto = new ParamDto();
+            paramDto.setName(actionParameter.getStaticFriendlyName()
+                    .orElseThrow(_Exceptions::unexpectedCodeReach));
+
+            actionParameter.getFeatureIdentifier();
+
+            if(actionParameter.getFeatureType() != FeatureType.ACTION_PARAMETER_COLLECTION) {
+                //scalar
+                valueMarshaller.recordParamScalar(
+                        actionParameter.getFeatureIdentifier(), paramDto, elementType, argAdapter);
+            } else {
+                //non-scalar
+                val values = ManagedObjects.unpack(elementType, argAdapter);
+                valueMarshaller.recordParamNonScalar(
+                        actionParameter.getFeatureIdentifier(), paramDto, elementType, values);
+            }
 
             CommandDtoUtils.parametersFor(actionDto)
                 .getParameter()
@@ -152,15 +152,12 @@ public class CommandDtoFactoryDefault implements CommandDtoFactory {
             final PropertyDto propertyDto,
             final ManagedObject valueAdapter) {
 
-        propertyDto.setLogicalMemberIdentifier(CommandUtil.logicalMemberIdentifierFor(property));
-        propertyDto.setMemberIdentifier(CommandUtil.memberIdentifierFor(property));
+        propertyDto.setLogicalMemberIdentifier(IdentifierUtil.logicalMemberIdentifierFor(property));
+        propertyDto.setMemberIdentifier(IdentifierUtil.memberIdentifierFor(property));
 
         val valueSpec = property.getElementType();
-        val valueType = valueSpec.getCorrespondingClass();
 
-        val newValue = CommonDtoUtils.newValueWithTypeDto(
-                valueType, UnwrapUtil.single(valueAdapter), bookmarkService);
-        propertyDto.setNewValue(newValue);
+        valueMarshaller.recordPropertyValue(propertyDto, valueSpec, valueAdapter);
     }
 
     // -- HELPER

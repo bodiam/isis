@@ -23,15 +23,15 @@ import io.kvision.core.CssSize
 import io.kvision.core.FlexDirection
 import io.kvision.core.UNIT
 import io.kvision.panel.VPanel
-import org.apache.isis.client.kroviz.core.event.ReplayCommand
+import org.apache.isis.client.kroviz.core.event.ReplayController
 import org.apache.isis.client.kroviz.to.ValueType
 import org.apache.isis.client.kroviz.ui.core.FormItem
 import org.apache.isis.client.kroviz.ui.core.RoDialog
+import org.apache.isis.client.kroviz.ui.core.SessionManager
 import org.apache.isis.client.kroviz.ui.core.UiManager
 import org.apache.isis.client.kroviz.ui.panel.EventLogTable
 
-class EventDialog() : Command() {
-    var dialog: RoDialog
+class EventDialog : Controller() {
 
     private val eventPanel = VPanel(spacing = 3) {
         width = CssSize(100, UNIT.perc)
@@ -52,13 +52,13 @@ class EventDialog() : Command() {
         dialog = RoDialog(
             caption = "Event History",
             items = mutableListOf(),
-            command = this,
+            controller = this,
             defaultAction = "Pin",
             widthPerc = 60,
             heightPerc = 70,
             customButtons = customButtons
         )
-        val eventTable = EventLogTable(UiManager.getEventStore().log)
+        val eventTable = EventLogTable(SessionManager.getEventStore().log)
         eventTable.tabulator.addCssClass("tabulator-in-dialog")
         eventPanel.add(eventTable)
 
@@ -72,7 +72,7 @@ class EventDialog() : Command() {
     override fun execute(action: String?) {
         when {
             action.isNullOrEmpty() -> {
-                UiManager.add("Event Log", EventLogTable(UiManager.getEventStore().log))
+                UiManager.add("Event Log", EventLogTable(SessionManager.getEventStore().log))
                 dialog.close()
             }
             action == EXP -> {
@@ -84,16 +84,12 @@ class EventDialog() : Command() {
                 dialog.close()
             }
             action == REP -> {
-                ReplayCommand().execute()
+                LoginPrompt(nextController = ReplayController()).open()
                 dialog.close()
             }
             else -> {
             }
         }
-    }
-
-    fun open() {
-        dialog.open()
     }
 
 }

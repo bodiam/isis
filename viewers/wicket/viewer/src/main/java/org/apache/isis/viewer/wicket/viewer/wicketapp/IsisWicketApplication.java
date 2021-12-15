@@ -41,6 +41,10 @@ import org.apache.wicket.authentication.strategy.DefaultAuthenticationStrategy;
 import org.apache.wicket.authroles.authentication.AuthenticatedWebApplication;
 import org.apache.wicket.authroles.authentication.AuthenticatedWebSession;
 import org.apache.wicket.core.request.mapper.MountedMapper;
+import org.apache.wicket.devutils.debugbar.DebugBar;
+import org.apache.wicket.devutils.debugbar.InspectorDebugPanel;
+import org.apache.wicket.devutils.debugbar.SessionSizeDebugPanel;
+import org.apache.wicket.devutils.debugbar.VersionDebugContributor;
 import org.apache.wicket.injection.Injector;
 import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.head.ResourceAggregator;
@@ -151,8 +155,6 @@ implements
     private IsisConfiguration configuration;
 
     private final IsisWicketApplication_experimental experimental;
-    private final IsisWicketApplication_newSession newSessionMixin;
-    private final IsisWicketApplication_newPageFactory newPageFactoryMixin;
 
     // /////////////////////////////////////////////////
     // constructor, init
@@ -160,8 +162,6 @@ implements
 
     public IsisWicketApplication() {
         experimental = new IsisWicketApplication_experimental(this);
-        newSessionMixin = new IsisWicketApplication_newSession(this);
-        newPageFactoryMixin = new IsisWicketApplication_newPageFactory(this);
     }
 
     /**
@@ -181,6 +181,8 @@ implements
 
         super.internalInit();
 
+        // intercept AJAX requests and reloads JAXB viewmodels so any detached entities are re-fetched
+        IsisWicketAjaxRequestListenerUtil.setRootRequestMapper(this, commonContext);
     }
 
     private AjaxRequestTarget decorate(final AjaxRequestTarget ajaxRequestTarget) {
@@ -276,28 +278,27 @@ implements
             //  side-effects?
             //  SharedResources sharedResources = getSharedResources();
 
-//            if(systemEnvironment.isPrototyping()) {
-//                DebugDiskDataStore.register(this);
-//                log.debug("DebugDiskDataStore registered; access via ~/wicket/internal/debug/diskDataStore");
-//                log.debug("DebugDiskDataStore: eg, http://localhost:8080/wicket/wicket/internal/debug/diskDataStore");
-//
-//                if(!getDebugSettings().isDevelopmentUtilitiesEnabled()) {
-//                    boolean enableDevUtils = configuration.getViewer().getWicket().getDevelopmentUtilities().isEnable();
-//                    if(enableDevUtils) {
-//                        getDebugSettings().setDevelopmentUtilitiesEnabled(true);
-//
-//                        // copied from DebugBarInitializer
-//                        // this is hacky, but need to do this because IInitializer#init() called before
-//                        // the Application's #init() is called.
-//                        // an alternative, better, design might be to move Isis' own initialization into an
-//                        // implementation of IInitializer?
-//                        DebugBar.registerContributor(VersionDebugContributor.DEBUG_BAR_CONTRIB, this);
-//                        DebugBar.registerContributor(InspectorDebugPanel.DEBUG_BAR_CONTRIB, this);
-//                        DebugBar.registerContributor(SessionSizeDebugPanel.DEBUG_BAR_CONTRIB, this);
-//                        //DebugBar.registerContributor(PageSizeDebugPanel.DEBUG_BAR_CONTRIB, this);
-//                    }
-//                }
-//            }
+            if(systemEnvironment.isPrototyping()
+                    && configuration.getViewer().getWicket().getDevelopmentUtilities().isEnable()) {
+
+                //DebugDiskDataStore.register(this);
+                log.debug("DebugDiskDataStore registered; access via ~/wicket/internal/debug/diskDataStore");
+                log.debug("DebugDiskDataStore: eg, http://localhost:8080/wicket/wicket/internal/debug/diskDataStore");
+
+                if(!getDebugSettings().isDevelopmentUtilitiesEnabled()) {
+                    getDebugSettings().setDevelopmentUtilitiesEnabled(true);
+
+                    // copied from DebugBarInitializer
+                    // this is hacky, but need to do this because IInitializer#init() called before
+                    // the Application's #init() is called.
+                    // an alternative, better, design might be to move Isis' own initialization into an
+                    // implementation of IInitializer?
+                    DebugBar.registerContributor(VersionDebugContributor.DEBUG_BAR_CONTRIB, this);
+                    DebugBar.registerContributor(InspectorDebugPanel.DEBUG_BAR_CONTRIB, this);
+                    DebugBar.registerContributor(SessionSizeDebugPanel.DEBUG_BAR_CONTRIB, this);
+                    //DebugBar.registerContributor(PageSizeDebugPanel.DEBUG_BAR_CONTRIB, this);
+                }
+            }
 
             //log.debug("storeSettings.inmemoryCacheSize        : {}", getStoreSettings().getInmemoryCacheSize());
             log.debug("storeSettings.asynchronousQueueCapacity: {}", getStoreSettings().getAsynchronousQueueCapacity());
@@ -329,7 +330,7 @@ implements
      */
     @Override
     protected IPageFactory newPageFactory() {
-        return newPageFactoryMixin.interceptPageFactory(super.newPageFactory());
+        return new _PageFactory(this, super.newPageFactory());
     }
 
     /*
@@ -337,7 +338,9 @@ implements
      */
     @Override
     public Session newSession(final Request request, final Response response) {
-        return newSessionMixin.interceptNewSession(super.newSession(request, response));
+        val newSession = (AuthenticatedWebSessionForIsis) super.newSession(request, response);
+        newSession.init(getCommonContext());
+        return newSession;
     }
 
     /**

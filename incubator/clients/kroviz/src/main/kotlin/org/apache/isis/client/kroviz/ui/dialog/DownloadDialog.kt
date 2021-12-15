@@ -24,15 +24,14 @@ import org.apache.isis.client.kroviz.ui.core.FormItem
 import org.apache.isis.client.kroviz.ui.core.RoDialog
 import org.apache.isis.client.kroviz.utils.DomUtil
 
-class DownloadDialog(val fileName:String, val content:String) : Command() {
+class DownloadDialog(val fileName:String, val content:String) : Controller() {
 
-    private lateinit var form: RoDialog
     val formItems = mutableListOf<FormItem>()
 
-    fun open() {
+    override fun open() {
         formItems.add(FormItem("Preview", ValueType.TEXT_AREA, content, 15))
-        form = RoDialog(caption = "Download: $fileName", items = formItems, command = this)
-        form.open()
+        dialog = RoDialog(caption = "Download: $fileName", items = formItems, controller = this)
+        super.open()
     }
 
     override fun execute(action:String?) {

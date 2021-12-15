@@ -27,11 +27,11 @@ import org.springframework.lang.Nullable;
 import org.apache.isis.applib.Identifier;
 import org.apache.isis.applib.annotation.Where;
 import org.apache.isis.commons.collections.Can;
-import org.apache.isis.commons.internal.base._NullSafe;
 import org.apache.isis.commons.internal.binding._BindableAbstract;
 import org.apache.isis.commons.internal.binding._Bindables;
 import org.apache.isis.commons.internal.binding._Observables;
 import org.apache.isis.commons.internal.binding._Observables.LazyObservable;
+import org.apache.isis.commons.internal.exceptions._Exceptions;
 import org.apache.isis.core.metamodel.consent.InteractionInitiatedBy;
 import org.apache.isis.core.metamodel.consent.InteractionResult;
 import org.apache.isis.core.metamodel.interactions.InteractionHead;
@@ -47,7 +47,7 @@ import org.apache.isis.core.metamodel.interactions.managed.ManagedMember;
 import org.apache.isis.core.metamodel.interactions.managed.ManagedMember.MemberType;
 import org.apache.isis.core.metamodel.interactions.managed.MultiselectChoices;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
-import org.apache.isis.core.metamodel.spec.ManagedObjects;
+import org.apache.isis.core.metamodel.spec.PackedManagedObject;
 import org.apache.isis.core.metamodel.spec.feature.ObjectMember;
 
 import lombok.AccessLevel;
@@ -74,13 +74,14 @@ implements MultiselectChoices {
             final Can<ManagedObject> args,
             final ManagedObject actionResult) {
 
-        val objectManager = managedAction.getMetaModel().getMetaModelContext().getObjectManager();
-        return new DataTableModel(managedAction, managedAction.getWhere(), ()->
-            ManagedObjects.isNullOrUnspecifiedOrEmpty(actionResult)
-                ? Can.empty()
-                : _NullSafe.streamAutodetect(actionResult.getPojo())
-                        .map(objectManager::adapt)
-                        .collect(Can.toCan()));
+        if(actionResult==null) {
+            new DataTableModel(managedAction, managedAction.getWhere(), Can::empty);
+        }
+        if(!(actionResult instanceof PackedManagedObject)) {
+            throw _Exceptions.unexpectedCodeReach();
+        }
+        return new DataTableModel(managedAction, managedAction.getWhere(),
+                ()->((PackedManagedObject)actionResult).unpack());
     }
 
     // -- CONSTRUCTION
@@ -107,16 +108,17 @@ implements MultiselectChoices {
         this.managedMember = managedMember;
         this.where = where;
 
-        dataElements = _Observables.lazy(elementSupplier);
+        //dataElements = _Observables.lazy(elementSupplier);
+        dataElements = _Observables.lazy(()->elementSupplier.get().map(e->
+            e.getMetaModelContext().getServiceInjector().injectServicesInto(e)));
 
         searchArgument = _Bindables.forValue(null);
 
         dataRowsFiltered = _Observables.lazy(()->
             dataElements.getValue().stream()
-                //TODO filter by searchArgument
+                //XXX future extension: filter by searchArgument
                 .filter(this::ignoreHidden)
                 .sorted(managedMember.getMetaModel().getElementComparator())
-                //TODO apply projection conversion (if any)
                 .map(domainObject->new DataRow(this, domainObject))
                 .collect(Can.toCan()));
 
@@ -151,7 +153,7 @@ implements MultiselectChoices {
             .map(property->new DataColumn(this, property))
             .collect(Can.toCan()));
 
-        //XXX the tile could dynamically reflect the number of elements selected
+        //XXX future extension: the tile could dynamically reflect the number of elements selected
         //eg... 5 Orders selected
         title = _Observables.lazy(()->
             managedMember
@@ -204,11 +206,12 @@ implements MultiselectChoices {
 
     public ActionInteraction startAssociatedActionInteraction(final String actionId, final Where where) {
         val featureId = managedMember.getIdentifier();
-        if(featureId.getType().isAction()) {
-            return ActionInteraction.empty(String.format("[no such associated action %s for collection %s "
-                    + "(which is not a collection)]",
-                    actionId,
-                    featureId));
+        if(!featureId.getType().isPropertyOrCollection()) {
+            return ActionInteraction.empty(String.format("[no such collection %s; instead got %s;"
+                    + "(while searching for an associated action %s)]",
+                    featureId,
+                    featureId.getType(),
+                    actionId));
         }
         return ActionInteraction.startWithMultiselect(managedMember.getOwner(), actionId, where, this);
     }
@@ -263,15 +266,15 @@ implements MultiselectChoices {
                 // bypass domain events
                 val collInteraction = CollectionInteraction.start(owner, memberId, where);
                 val managedColl = collInteraction.getManagedCollection().orElseThrow();
-                //FIXME[ISIS-2871] bypass domain events
+                // invocation bypassing domain events (pass-through)
                 return new DataTableModel(managedColl, where, ()->
-                    managedColl.streamElements().collect(Can.toCan()));
+                    managedColl.streamElements(InteractionInitiatedBy.PASS_THROUGH).collect(Can.toCan()));
             }
             val actionInteraction = ActionInteraction.start(owner, memberId, where);
             val managedAction = actionInteraction.getManagedActionElseFail();
             val args = argsMemento.getArgumentList(managedAction.getMetaModel());
-            //FIXME[ISIS-2871] bypass domain events
-            val actionResult = managedAction.invoke(args).left().orElseThrow();
+            // invocation bypassing domain events (pass-through)
+            val actionResult = managedAction.invoke(args, InteractionInitiatedBy.PASS_THROUGH).left().orElseThrow();
             return forAction(managedAction, args, actionResult);
         }
     }

@@ -18,25 +18,23 @@
  */
 package org.apache.isis.core.metamodel.valuesemantics.temporal;
 
+import java.time.Duration;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 
 import javax.inject.Named;
 
 import org.springframework.stereotype.Component;
 
+import org.apache.isis.applib.value.semantics.OrderRelation;
 import org.apache.isis.commons.collections.Can;
-import org.apache.isis.core.config.IsisConfiguration;
 import org.apache.isis.schema.common.v2.ValueType;
-
-import lombok.val;
 
 @Component
 @Named("isis.val.LocalDateValueSemantics")
 //@Log4j2
 public class LocalDateValueSemantics
-extends TemporalValueSemanticsProvider<LocalDate> {
+extends TemporalValueSemanticsProvider<LocalDate>
+implements OrderRelation<LocalDate, Duration> {
 
     public static final int MAX_LENGTH = 12;
     public static final int TYPICAL_LENGTH = MAX_LENGTH;
@@ -51,30 +49,25 @@ extends TemporalValueSemanticsProvider<LocalDate> {
         return ValueType.LOCAL_DATE;
     }
 
-    public LocalDateValueSemantics(final IsisConfiguration config) {
+    public LocalDateValueSemantics() {
         super(TemporalCharacteristic.DATE_ONLY, OffsetCharacteristic.LOCAL,
                 TYPICAL_LENGTH, MAX_LENGTH,
                 LocalDate::from,
                 TemporalAdjust::adjustLocalDate);
+    }
 
-        super.addNamedFormat("iso", "yyyy-MM-dd");
-        super.addNamedFormat("iso_encoding", "yyyy-MM-dd");
-        super.updateParsers();
+    // -- ORDER RELATION
 
-        setEncodingFormatter(lookupNamedFormatterElseFail("iso_encoding"));
+    @Override
+    public Duration epsilon() {
+        return Duration.ZERO; // not used for dates, as these are integer based
+    }
 
-        val configuredNameOrPattern = config.getValueTypes().getJavaTime().getLocalDate().getFormat();
-
-        // walk through 3 methods of generating a formatter, first one to return non empty wins
-        val formatter = formatterFirstOf(Can.of(
-                ()->lookupFormatStyle(configuredNameOrPattern).map(DateTimeFormatter::ofLocalizedDate),
-                ()->lookupNamedFormatter(configuredNameOrPattern),
-                ()->formatterFromPattern(configuredNameOrPattern)
-                ))
-        .orElseGet(()->DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM));  // fallback
-
-        setTitleFormatter(formatter);
-
+    @Override
+    public Can<LocalDate> getExamples() {
+        return Can.of(
+                LocalDate.now(),
+                LocalDate.now().plusDays(2));
     }
 
 }
