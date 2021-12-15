@@ -106,7 +106,6 @@ import de.agilecoders.wicket.webjars.WicketWebjars;
 import de.agilecoders.wicket.webjars.request.resource.WebjarsJavaScriptResourceReference;
 import de.agilecoders.wicket.webjars.settings.IWebjarsSettings;
 import de.agilecoders.wicket.webjars.settings.WebjarsSettings;
-import net.ftlines.wicketsource.WicketSource;
 
 /**
  * Main application, subclassing the Wicket {@link Application} and
@@ -387,9 +386,10 @@ implements
         }
     }
 
+    @Deprecated
     protected void configureWicketSourcePlugin() {
         if(systemEnvironment.isPrototyping()) {
-            WicketSource.configure(this);
+            //WicketSource.configure(this);
         }
     }
 
