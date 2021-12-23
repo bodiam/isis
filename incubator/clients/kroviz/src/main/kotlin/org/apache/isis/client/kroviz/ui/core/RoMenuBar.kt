@@ -68,8 +68,21 @@ class RoMenuBar : SimplePanel() {
             session.baseUrl,
             image = session.resString,
             { switch(session) })
-        mainEntry.add(menuEntry)
+        if (!mainEntryContains(session.baseUrl)) {
+            mainEntry.add(menuEntry)
+        }
         switch(session)
+    }
+
+    private fun mainEntryContains(baseUrl: String): Boolean {
+        mainEntry.getChildren().forEach {
+            if (it is Link) {
+                if ((it as Link).label == baseUrl) {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     fun switch(session: Session) {
@@ -81,14 +94,14 @@ class RoMenuBar : SimplePanel() {
             val menuBars = logEntry.obj as Menubars
             amendMenu(menuBars)
         }
-        UiManager.setNormalCursor()
+        ViewManager.setNormalCursor()
     }
 
     private fun buildMenuEntryWithImage(label: String, image: ResString?, action: dynamic): Link {
         val link = Link(label, image = image, className = "dropdown-item").apply { appIconStyle }
         link.onClick { e ->
             val at = Point(e.pageX.toInt(), e.pageY.toInt())
-            UiManager.position = at
+            ViewManager.position = at
             action()
         }
         return link
@@ -110,7 +123,7 @@ class RoMenuBar : SimplePanel() {
         val icon = IconManager.find(iconName)
         val link = Link(label, icon = icon, className = "dropdown-item").onClick { e ->
             val at = Point(e.pageX.toInt(), e.pageY.toInt())
-            UiManager.position = at
+            ViewManager.position = at
             action()
         }
         return link
@@ -128,7 +141,7 @@ class RoMenuBar : SimplePanel() {
         )
 
         mainMenu.add(
-            buildMenuEntry("Toolbar", "Toolbar", { UiManager.getRoIconBar().toggle() })
+            buildMenuEntry("Toolbar", "Toolbar", { ViewManager.getRoIconBar().toggle() })
         )
 
         mainMenu.add(
@@ -137,17 +150,17 @@ class RoMenuBar : SimplePanel() {
 
         val chartTitle = "Sample Chart"
         mainMenu.add(
-            buildMenuEntry(chartTitle, "Chart", { UiManager.add(chartTitle, EventChart(SampleChartModel())) })
+            buildMenuEntry(chartTitle, "Chart", { ViewManager.add(chartTitle, EventChart(SampleChartModel())) })
         )
 
         val geoMapTitle = "Sample Geo Map"
         mainMenu.add(
-            buildMenuEntry(geoMapTitle, "Map", { UiManager.add(geoMapTitle, GeoMap()) })
+            buildMenuEntry(geoMapTitle, "Map", { ViewManager.add(geoMapTitle, GeoMap()) })
         )
 
         val svgMapTitle = "Sample SVG Map"
         mainMenu.add(
-            buildMenuEntry(svgMapTitle, "Diagram", { UiManager.add(svgMapTitle, SvgMap()) })
+            buildMenuEntry(svgMapTitle, "Diagram", { ViewManager.add(svgMapTitle, SvgMap()) })
         )
 
         val svgInlineTitle = "Sample SVG Inline (interactive)"
@@ -157,12 +170,12 @@ class RoMenuBar : SimplePanel() {
 
         val imageTitle = "Sample Image"
         mainMenu.add(
-            buildMenuEntry(imageTitle, "Image", { UiManager.add(imageTitle, ImageSample) })
+            buildMenuEntry(imageTitle, "Image", { ViewManager.add(imageTitle, ImageSample) })
         )
 
         val aboutTitle = "About"
         mainMenu.add(
-            buildMenuEntry(aboutTitle, "About", { UiManager.add(aboutTitle, About().dialog) })
+            buildMenuEntry(aboutTitle, "About", { ViewManager.add(aboutTitle, About().dialog) })
         )
 
         /*

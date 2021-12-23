@@ -1,0 +1,100 @@
+= ValueSemanticsProvider _(interface)_
+:Notice: Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE file distributed with this work for additional information regarding copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at. http://www.apache.org/licenses/LICENSE-2.0 . Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR  CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+Provides a mechanism for providing a set of value semantics.
+
+This interface is used by xref:refguide:applib:index/annotation/Value.adoc[Value] to allow these semantics to be provided through a single point. Alternatively, xref:refguide:applib:index/annotation/Value.adoc[Value] supports this information being provided via the configuration files.
+
+Whatever the class that implements this interface, it must also expose either a `public` no-arg constructor, or (for implementations that also are `Facet` s) a `public` constructor that accepts a `FacetHolder` , and `IsisConfiguration` and a `ValueSemanticsProviderContext` . This constructor is then used by the framework to instantiate the object reflectively.
+
+== API
+
+[source,java]
+.ValueSemanticsProvider.java
+----
+interface ValueSemanticsProvider<T> {
+  Class<T> getCorrespondingClass()
+  ValueType getSchemaValueType()     // <.>
+  OrderRelation<T, ?> getOrderRelation()     // <.>
+  Converter<T, ?> getConverter()     // <.>
+  Renderer<T> getRenderer()     // <.>
+  Parser<T> getParser()     // <.>
+  EncoderDecoder<T> getEncoderDecoder()     // <.>
+  DefaultsProvider<T> getDefaultsProvider()     // <.>
+}
+----
+
+<.> xref:#getSchemaValueType__[getSchemaValueType()]
++
+--
+Values might appear within _CommandDto_ , _InteractionDto_ and _ChangesDto_ , where a mapping onto one of _ValueType_ (s) as provided by the XML schema is required.
+--
+<.> xref:#getOrderRelation__[getOrderRelation()]
++
+--
+The xref:refguide:applib:index/value/semantics/OrderRelation.adoc[OrderRelation] , if any.
+--
+<.> xref:#getConverter__[getConverter()]
++
+--
+The xref:refguide:applib:index/value/semantics/Converter.adoc[Converter] , if any.
+--
+<.> xref:#getRenderer__[getRenderer()]
++
+--
+The xref:refguide:applib:index/value/semantics/Renderer.adoc[Renderer] , if any.
+--
+<.> xref:#getParser__[getParser()]
++
+--
+The xref:refguide:applib:index/value/semantics/Parser.adoc[Parser] , if any.
+--
+<.> xref:#getEncoderDecoder__[getEncoderDecoder()]
++
+--
+The xref:refguide:applib:index/value/semantics/EncoderDecoder.adoc[EncoderDecoder] , if any.
+--
+<.> xref:#getDefaultsProvider__[getDefaultsProvider()]
++
+--
+The xref:refguide:applib:index/value/semantics/DefaultsProvider.adoc[DefaultsProvider] , if any.
+--
+
+== Members
+
+[#getSchemaValueType__]
+=== getSchemaValueType()
+
+Values might appear within _CommandDto_ , _InteractionDto_ and _ChangesDto_ , where a mapping onto one of _ValueType_ (s) as provided by the XML schema is required.
+
+[#getOrderRelation__]
+=== getOrderRelation()
+
+The xref:refguide:applib:index/value/semantics/OrderRelation.adoc[OrderRelation] , if any.
+
+[#getConverter__]
+=== getConverter()
+
+The xref:refguide:applib:index/value/semantics/Converter.adoc[Converter] , if any.
+
+[#getRenderer__]
+=== getRenderer()
+
+The xref:refguide:applib:index/value/semantics/Renderer.adoc[Renderer] , if any.
+
+[#getParser__]
+=== getParser()
+
+The xref:refguide:applib:index/value/semantics/Parser.adoc[Parser] , if any.
+
+[#getEncoderDecoder__]
+=== getEncoderDecoder()
+
+The xref:refguide:applib:index/value/semantics/EncoderDecoder.adoc[EncoderDecoder] , if any.
+
+[#getDefaultsProvider__]
+=== getDefaultsProvider()
+
+The xref:refguide:applib:index/value/semantics/DefaultsProvider.adoc[DefaultsProvider] , if any.
+
+If not `null` , implies that the value has (or may have) a default.

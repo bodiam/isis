@@ -38,6 +38,8 @@ import org.apache.isis.core.metamodel.consent.Consent;
 import org.apache.isis.core.metamodel.consent.InteractionInitiatedBy;
 import org.apache.isis.core.metamodel.consent.InteractionResult;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
+import org.apache.isis.core.metamodel.spec.ManagedObjects;
+import org.apache.isis.core.metamodel.spec.ManagedObjects.EntityUtil;
 import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.spec.feature.ObjectActionParameter;
 
@@ -63,7 +65,6 @@ public class ParameterNegotiationModel {
 
     }
 
-    @Getter private final ActionInteractionHead head;
     private final @NonNull ManagedAction managedAction;
     private final Can<ParameterModel> paramModels;
     private final _BindableAbstract<Boolean> validationFeedbackActive;
@@ -73,7 +74,6 @@ public class ParameterNegotiationModel {
             final @NonNull ManagedAction managedAction,
             final @NonNull Can<ManagedObject> initialParamValues) {
         this.managedAction = managedAction;
-        this.head = managedAction.interactionHead(); //TODO maybe don't memoize
         this.validationFeedbackActive = _Bindables.forValue(false);
 
         val paramNrIterator = IntStream.range(0, initialParamValues.size()).iterator();
@@ -108,6 +108,10 @@ public class ParameterNegotiationModel {
                         String.format("Internal Error: Parameter value adapter must not be null in %s",
                                 managedAction.getAction().getFeatureIdentifier())))
                 .collect(Can.toCan());
+    }
+
+    @NonNull public ActionInteractionHead getHead() {
+        return managedAction.interactionHead();
     }
 
     @NonNull public ManagedObject getActionTarget() {
@@ -209,6 +213,7 @@ public class ParameterNegotiationModel {
     }
 
     public void setParamValue(final int paramNr, final @NonNull ManagedObject newParamValue) {
+        //EntityUtil.assertAttachedWhenEntity(newParamValue);
         paramModels.getElseFail(paramNr).getBindableParamValue().setValue(newParamValue);
     }
 
@@ -272,6 +277,8 @@ public class ParameterNegotiationModel {
             this.negotiationModel = negotiationModel;
 
             bindableParamValue = _Bindables.forValue(initialValue);
+            bindableParamValue.setValueRefiner(EntityUtil::refetch);
+            bindableParamValue.setValueGuard(ManagedObjects.assertInstanceOf(metaModel.getElementType()));
             bindableParamValue.addListener((e,o,n)->{
                 if(n==null) {
                     // lift null to empty ...
@@ -305,7 +312,7 @@ public class ParameterNegotiationModel {
             observableParamValidation = _Observables.lazy(()->
                 isValidationFeedbackActive()
                 ? getMetaModel()
-                        .isValid(getNegotiationModel().head, getNegotiationModel().getParamValues(), InteractionInitiatedBy.USER)
+                        .isValid(getNegotiationModel().getHead(), getNegotiationModel().getParamValues(), InteractionInitiatedBy.USER)
                         .getReason()
                 : (String)null);
 
@@ -383,7 +390,6 @@ public class ParameterNegotiationModel {
             return isCurrentValueAbsent;
         }
     }
-
 
 
 }

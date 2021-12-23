@@ -31,8 +31,6 @@ import org.apache.wicket.util.file.Files;
 import org.apache.wicket.util.resource.FileResourceStream;
 import org.apache.wicket.util.resource.IResourceStream;
 
-import org.apache.isis.viewer.wicket.ui.pages.entity.EntityPage;
-
 class ExcelFileDownloadLink extends DownloadLink {
 
     private static final long serialVersionUID = 1L;
@@ -47,8 +45,6 @@ class ExcelFileDownloadLink extends DownloadLink {
 
     @Override
     public void onClick() {
-
-        EntityPage.jaxbViewmodelRefresh(getPage());
 
         final File file = getModelObject();
         if (file == null)

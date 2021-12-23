@@ -45,6 +45,8 @@ import org.apache.wicket.markup.html.link.AbstractLink;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.Fragment;
+import org.apache.wicket.markup.repeater.Item;
+import org.apache.wicket.markup.repeater.OddEvenItem;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.request.resource.ResourceReference;
 import org.apache.wicket.util.convert.IConverter;
@@ -59,6 +61,7 @@ import org.apache.isis.applib.Identifier;
 import org.apache.isis.commons.internal.base._Strings;
 import org.apache.isis.commons.internal.debug._Probe;
 import org.apache.isis.commons.internal.debug._Probe.EntryPoint;
+import org.apache.isis.commons.internal.functions._Functions.SerializableFunction;
 import org.apache.isis.viewer.wicket.model.isis.WicketViewerSettings;
 import org.apache.isis.viewer.wicket.ui.panels.PanelUtil;
 
@@ -503,6 +506,23 @@ public class Wkt {
         return add(container, listView(id, listModel, itemPopulator));
     }
 
+    // -- TABLES
+
+    public <T> Item<T> oddEvenItem(
+            final String id, final int index, final IModel<T> model,
+            final SerializableFunction<T, String> cssClassProvider) {
+
+        return new OddEvenItem<T>(id, index, model) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected void onComponentTag(final ComponentTag tag) {
+                super.onComponentTag(tag);
+                Wkt.cssAppend(tag, cssClassProvider.apply(model.getObject()));
+            }
+        };
+    }
+
     // -- TEXT AREA
 
     public TextArea<String> textAreaNoTab(final String id, final IModel<String> textModel) {
@@ -619,7 +639,6 @@ public class Wkt {
                 ? String.format("Wicket.Event.publish(Isis.Topic.%s, '%s')", topic.name(), containerId)
                 : String.format("Wicket.Event.publish(Isis.Topic.%s)", topic.name());
     }
-
 
 
 }

@@ -13,7 +13,7 @@ For example, code that makes a repository call many times within a loop can be p
 .QueryResultsCache.java
 ----
 class QueryResultsCache {
-  T execute(final Callable<T> callable, final Class<?> callingClass, final String methodName, final Object... keys)     // <.>
+  T execute(Callable<T> callable, Class<?> callingClass, String methodName, Object... keys)     // <.>
   R execute(MethodReferences.Call0<? extends R> action, Class<?> callingClass, String methodName)
   R execute(MethodReferences.Call1<? extends R, A0> action, Class<?> callingClass, String methodName, A0 arg0)
   R execute(MethodReferences.Call2<? extends R, A0, A1> action, Class<?> callingClass, String methodName, A0 arg0, A1 arg1)

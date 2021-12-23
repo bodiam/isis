@@ -36,7 +36,7 @@ extends EntityCollectionModelAbstract {
     }
 
     @Override
-    public int getCount() {
+    public int getElementCount() {
         return 0;
     }
 

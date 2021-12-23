@@ -14,10 +14,10 @@
 .JdoLifecycleListener.java
 ----
 class JdoLifecycleListener {
-  void postCreate(final InstanceLifecycleEvent event)
-  void preAttach(final InstanceLifecycleEvent event)
-  void postAttach(final InstanceLifecycleEvent event)
-  void postLoad(final InstanceLifecycleEvent event)
+  void postCreate(InstanceLifecycleEvent event)
+  void preAttach(InstanceLifecycleEvent event)
+  void postAttach(InstanceLifecycleEvent event)
+  void postLoad(InstanceLifecycleEvent event)
   void preStore(InstanceLifecycleEvent event)
   void postStore(InstanceLifecycleEvent event)
   void preDirty(InstanceLifecycleEvent event)

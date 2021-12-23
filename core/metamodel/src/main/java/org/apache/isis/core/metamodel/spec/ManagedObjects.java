@@ -33,6 +33,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
+import org.springframework.util.ClassUtils;
 
 import org.apache.isis.applib.annotation.Where;
 import org.apache.isis.applib.services.bookmark.Bookmark;
@@ -121,6 +122,43 @@ public final class ManagedObjects {
     public static Optional<String> getDomainType(final ManagedObject managedObject) {
         return spec(managedObject)
                 .map(ObjectSpecification::getLogicalTypeName);
+    }
+
+    // -- INSTANCE-OF CHECKS
+
+    /**
+     * Whether given {@code object} is an instance of given {@code elementType}.
+     */
+    public static boolean isInstanceOf(
+            final @Nullable ManagedObject object,
+            final @NonNull ObjectSpecification elementType) {
+        val upperBound = ClassUtils.resolvePrimitiveIfNecessary(elementType.getCorrespondingClass());
+        if(ManagedObjects.isNullOrUnspecifiedOrEmpty(object)) {
+            return true;
+        }
+        if(object instanceof PackedManagedObject) {
+            return ((PackedManagedObject)object).unpack().stream()
+            .allMatch(element->isInstanceOf(element, elementType));
+        }
+        val objectActualType = ClassUtils.resolvePrimitiveIfNecessary(object.getSpecification().getCorrespondingClass());
+        return upperBound.isAssignableFrom(objectActualType);
+    }
+
+    /**
+     * Guard against incompatible type.
+     */
+    public static @NonNull UnaryOperator<ManagedObject> assertInstanceOf(final ObjectSpecification elementType) {
+        return object -> {
+            if(isInstanceOf(object, elementType)) {
+                return object;
+            }
+            val upperBound = ClassUtils.resolvePrimitiveIfNecessary(elementType.getCorrespondingClass());
+            val objectActualType = ClassUtils.resolvePrimitiveIfNecessary(object.getSpecification().getCorrespondingClass());
+            throw _Exceptions.illegalArgument("Object has incompatible type %s,"
+                    + "must be an instance of %s.",
+                    objectActualType.getName(),
+                    upperBound.getName());
+        };
     }
 
     // -- IDENTIFICATION
@@ -457,7 +495,7 @@ public final class ManagedObjects {
                 return "unspecified object";
             }
 
-            if (managedObject.getSpecification().isParentedOrFreeCollection()) {
+            if (managedObject.getSpecification().isNonScalar()) {
                 val collectionFacet = managedObject.getSpecification().getFacet(CollectionFacet.class);
                 return collectionTitleString(managedObject, collectionFacet);
             } else {
@@ -618,6 +656,10 @@ public final class ManagedObjects {
          */
         @NonNull
         public static ManagedObject requiresAttached(final @NonNull ManagedObject managedObject) {
+            if(managedObject instanceof PackedManagedObject) {
+                ((PackedManagedObject)managedObject).unpack().forEach(EntityUtil::requiresAttached);
+                return managedObject;
+            }
             val entityState = EntityUtil.getEntityState(managedObject);
             if(entityState.isPersistable()) {
                 // ensure we have an attached entity
@@ -630,16 +672,20 @@ public final class ManagedObjects {
             return managedObject;
         }
 
-        public static void refetch(final @Nullable ManagedObject managedObject) {
+        public static ManagedObject refetch(final @Nullable ManagedObject managedObject) {
             if(isNullOrUnspecifiedOrEmpty(managedObject)) {
-                return;
+                return managedObject;
+            }
+            if(managedObject instanceof PackedManagedObject) {
+                ((PackedManagedObject)managedObject).unpack().forEach(EntityUtil::refetch);
+                return managedObject;
             }
             val entityState = EntityUtil.getEntityState(managedObject);
             if(!entityState.isPersistable()) {
-                return;
+                return managedObject;
             }
             if(!entityState.isDetached()) {
-                return;
+                return managedObject;
             }
 
             val spec = managedObject.getSpecification();
@@ -656,6 +702,7 @@ public final class ManagedObjects {
             _Assert.assertTrue(newState.isAttached());
 
             managedObject.replacePojo(old->reattached.getPojo());
+            return managedObject;
         }
 
         public static void requiresWhenFirstIsBookmarkableSecondIsAttached(
@@ -694,6 +741,11 @@ public final class ManagedObjects {
         }
 
         public static ManagedObject assertAttachedWhenEntity(final @Nullable ManagedObject adapter) {
+            if(adapter instanceof PackedManagedObject) {
+                for(val element : ((PackedManagedObject)adapter).unpack()) {
+                    assertAttachedWhenEntity(element);
+                }
+            }
             val state = EntityUtil.getEntityState(adapter);
             if(state.isPersistable()) {
                 _Assert.assertEquals(EntityState.PERSISTABLE_ATTACHED, state,
@@ -1048,8 +1100,5 @@ public final class ManagedObjects {
         }
 
     }
-
-
-
 
 }

@@ -21,9 +21,13 @@ package org.apache.isis.viewer.wicket.model.models.interaction.coll;
 import java.util.UUID;
 
 import org.apache.wicket.model.ChainingModel;
+import org.apache.wicket.model.IModel;
 
 import org.apache.isis.core.metamodel.interactions.managed.nonscalar.DataRow;
-import org.apache.isis.viewer.wicket.model.models.EntityCollectionModel;
+import org.apache.isis.core.metamodel.interactions.managed.nonscalar.DataTableModel;
+
+import lombok.Getter;
+import lombok.NonNull;
 
 public class DataRowWkt
 extends ChainingModel<DataRow> {
@@ -31,35 +35,38 @@ extends ChainingModel<DataRow> {
     private static final long serialVersionUID = 1L;
 
     public static DataRowWkt chain(
-            final EntityCollectionModel entityCollectionModel,
+            final IModel<DataTableModel> dataTableModelHolder,
             final DataRow dataRow) {
-        return new DataRowWkt(entityCollectionModel, dataRow);
+        return new DataRowWkt(dataTableModelHolder, dataRow);
     }
 
-    private final UUID uuid; // in support of client side sorting
+    @Getter private final @NonNull UUID uuid; // in support of table sorting
+    @Getter private final @NonNull DataRowToggleWkt dataRowToggle;
+
     private transient DataRow dataRow;
 
     private DataRowWkt(
-            final EntityCollectionModel entityCollectionModel,
+            final IModel<DataTableModel> dataTableModelHolder,
             final DataRow dataRow) {
-        super(entityCollectionModel);
+        super(dataTableModelHolder);
         this.dataRow = dataRow;
         this.uuid = dataRow.getUuid();
-    }
-
-    EntityCollectionModel parent() {
-        return (EntityCollectionModel) super.getTarget();
+        this.dataRowToggle = new DataRowToggleWkt(this);
     }
 
     @Override
     public DataRow getObject() {
         if(dataRow==null) {
-            dataRow = parent().getDataTableModel().getDataRowsFiltered().getValue().stream()
-                    .filter(dr->dr.getUuid().equals(uuid))
-                    .findFirst()
+            dataRow = getDataTableModel().lookupDataRow(uuid)
                     .orElse(null);
         }
         return dataRow;
+    }
+
+    // -- HELPER
+
+    private DataTableModel getDataTableModel() {
+        return ((DataTableModelWkt) super.getTarget()).getObject();
     }
 
 }

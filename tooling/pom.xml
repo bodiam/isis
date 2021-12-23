@@ -18,7 +18,7 @@
 		<groupId>org.apache.isis</groupId>
 		<artifactId>isis-parent</artifactId>
 		<version>2.0.0-SNAPSHOT</version>
-		<relativePath>../isis-parent/pom.xml</relativePath>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<groupId>org.apache.isis.tooling</groupId>
@@ -28,7 +28,6 @@
 	<description>
         Libraries and tools not depending on the _Apache Isis Core_ ecosystem,
         eg. code mining, automated documentation.
-        (Targeted for JVM 11+)
     </description>
 
 	<packaging>pom</packaging>
@@ -89,7 +88,6 @@
 				<groupId>org.apache.rat</groupId>
 				<artifactId>apache-rat-plugin</artifactId>
 
-				<!-- APACHE ISIS customisation 4/7: start -->
 				<configuration>
 					<addDefaultLicenseMatchers>true</addDefaultLicenseMatchers>
 					<excludeSubProjects>true</excludeSubProjects>
@@ -274,7 +272,7 @@
         <dependency>
 		    <groupId>org.checkerframework</groupId>
 		    <artifactId>checker-qual</artifactId>
-		    <version>3.20.0</version>
+		    <version>3.21.0</version>
 		</dependency>
 
 		<!-- LOGGING -->

@@ -21,7 +21,7 @@ enum RepresentationType {
   DOMAIN_TYPE
   LAYOUT
   OBJECT_LAYOUT
-  OBJECT_ICON
+  IMAGE
   MENUBARS
   PROPERTY_DESCRIPTION
   COLLECTION_DESCRIPTION
@@ -31,40 +31,29 @@ enum RepresentationType {
   ERROR
   GENERIC
   String getName()
-  MediaType getMediaType()     // <.>
   MediaType getJsonMediaType()
   MediaType getXmlMediaType()
   MediaType getJsonElseXmlMediaType()
-  MediaType getMediaType(final String parameter, final String paramValue)     // <.>
-  MediaType getJsonMediaType(final Map<String, String> mediaTypeParams)
-  MediaType getXmlMediaType(final Map<String, String> mediaTypeParams)
+  MediaType getMediaType(String parameter, String paramValue)     // <.>
+  MediaType getJsonMediaType(Map<String, String> mediaTypeParams)
+  MediaType getXmlMediaType(Map<String, String> mediaTypeParams)
   String getMediaTypeProfile()
   Class<? extends JsonRepresentation> getRepresentationClass()
-  RepresentationType lookup(final String name)
-  RepresentationType lookup(final MediaType mediaType)
-  boolean matches(final MediaType mediaType)
-  boolean matchesXmlProfile(final MediaType mediaType)
-  boolean matchesJsonProfile(final MediaType mediaType)
-  MediaType matchesXmlProfileWithParameter(final List<MediaType> mediaTypes, final String parameterKey)     // <.>
-  MediaType matchesJsonProfileWithParameter(final List<MediaType> mediaTypes, final String parameterKey)     // <.>
+  RepresentationType lookup(String name)
+  RepresentationType lookup(MediaType mediaType)
+  boolean matches(MediaType mediaType)
+  boolean matchesXmlProfile(MediaType mediaType)
+  boolean matchesJsonProfile(MediaType mediaType)
+  MediaType matchesXmlProfileWithParameter(List<MediaType> mediaTypes, String parameterKey)     // <.>
+  MediaType matchesJsonProfileWithParameter(List<MediaType> mediaTypes, String parameterKey)     // <.>
   Parser<RepresentationType> parser()
 }
 ----
 
-<.> xref:#getMediaType__[getMediaType()]
-+
---
-[WARNING]
-====
-[red]#_deprecated:_#
-
-- use _#getJsonMediaType()_ instead.
-====
---
 <.> xref:#getMediaType__String_String[getMediaType(String, String)]
 +
 --
-Clones the (immutable) _#getMediaType() media type_ , adding in one additional parameter value.
+Clones the (immutable) _#getJsonMediaType() media type_ , adding in one additional parameter value.
 --
 <.> xref:#matchesXmlProfileWithParameter__List_String[matchesXmlProfileWithParameter(List, String)]
 +
@@ -79,20 +68,10 @@ whether any of the xref:refguide:viewer:index/restfulobjects/applib/Representati
 
 == Members
 
-[#getMediaType__]
-=== getMediaType()
-
-[WARNING]
-====
-[red]#_deprecated:_#
-
-- use _#getJsonMediaType()_ instead.
-====
-
 [#getMediaType__String_String]
 === getMediaType(String, String)
 
-Clones the (immutable) _#getMediaType() media type_ , adding in one additional parameter value.
+Clones the (immutable) _#getJsonMediaType() media type_ , adding in one additional parameter value.
 
 [#matchesXmlProfileWithParameter__List_String]
 === matchesXmlProfileWithParameter(List, String)

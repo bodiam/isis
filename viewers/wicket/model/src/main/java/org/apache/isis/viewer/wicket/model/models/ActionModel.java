@@ -37,7 +37,6 @@ extends ActionFormUiModel, FormExecutorContext, BookmarkableModel, IModel<Manage
      */
     void clearArguments();
 
-    void reassessPendingParamUiModels(int skipCount);
     ManagedObject executeActionAndReturnResult();
     Can<ManagedObject> snapshotArgs();
 

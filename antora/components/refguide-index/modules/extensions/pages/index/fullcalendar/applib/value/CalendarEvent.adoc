@@ -9,20 +9,12 @@ Value type representing an event on a calendar.
 .CalendarEvent.java
 ----
 class CalendarEvent {
-  CalendarEvent(final DateTime dateTime, final String calendarName, final String title)
-  CalendarEvent(final DateTime dateTime, final String calendarName, final String title, final String notes)
-  DateTime getDateTime()
-  String getCalendarName()
-  String getTitle()
-  String getNotes()
-  CalendarEvent withDateTime(final DateTime date)
-  CalendarEvent withCalendarName(final String calendarName)
-  CalendarEvent withTitle(final String title)
-  CalendarEvent withNotes(final String notes)
-  int hashCode()
-  boolean equals(Object obj)
-  String toString()
-  int typicalLength()
+  CalendarEvent of(ZonedDateTime dateTime, String calendarName, String title)
+  CalendarEvent of(ZonedDateTime dateTime, String calendarName, String title, String notes)
+  CalendarEvent withDateTime(ZonedDateTime dateTime)
+  CalendarEvent withDateTime(LocalDateTime localDateTime, ZoneId zoneId)
+  ZonedDateTime asDateTime(ZoneId zoneId)
+  int compareTo(CalendarEvent other)
 }
 ----
 

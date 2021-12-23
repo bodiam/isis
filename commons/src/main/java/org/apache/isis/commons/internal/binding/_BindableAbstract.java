@@ -21,6 +21,7 @@ package org.apache.isis.commons.internal.binding;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import org.apache.isis.commons.binding.Bindable;
 import org.apache.isis.commons.binding.ChangeListener;
@@ -29,6 +30,7 @@ import org.apache.isis.commons.binding.Observable;
 import org.apache.isis.commons.internal.exceptions._Exceptions;
 
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.val;
 
 
@@ -46,9 +48,23 @@ public abstract class _BindableAbstract<T> implements Bindable<T> {
 
     private T value;
     private Observable<? extends T> observable = null;;
-    private InvalidationListener listener = null;
+    private InvalidationListener invalidationListener = null;
     private boolean valid = true;
     private InternalUtil<T> util = null;
+
+    /**
+     * Called within {@link #getValue()} to refine the internally stored value.
+     * <p>
+     * use-case: re-fetch detached entities
+     */
+    @Setter private @NonNull UnaryOperator<T> valueRefiner = UnaryOperator.identity();
+
+    /**
+     * Called within {@link #setValue()} to guard against invalid new values.
+     * <p>
+     * use-case: guard against incompatible types
+     */
+    @Setter private @NonNull UnaryOperator<T> valueGuard = UnaryOperator.identity();
 
     public _BindableAbstract() {
     }
@@ -90,16 +106,18 @@ public abstract class _BindableAbstract<T> implements Bindable<T> {
     @Override
     public T getValue() {
         valid = true;
-        return observable == null
+        val val = observable == null
                 ? value
                 : observable.getValue();
+        return valueRefiner.apply(val);
     }
 
     @Override
-    public void setValue(final T newValue) {
+    public void setValue(final T proposedNewValue) {
         if (isBound()) {
             throw _Exceptions.unrecoverable("Cannot set value on a bound bindable.");
         }
+        val newValue = valueGuard.apply(proposedNewValue);
         if (value != newValue) {
             value = newValue;
             markInvalid();
@@ -116,10 +134,10 @@ public abstract class _BindableAbstract<T> implements Bindable<T> {
         if (!newObservable.equals(this.observable)) {
             unbind();
             observable = newObservable;
-            if (listener == null) {
-                listener = new WeakInvalidationListener(this);
+            if (invalidationListener == null) {
+                invalidationListener = new WeakInvalidationListener(this);
             }
-            observable.addListener(listener);
+            observable.addListener(invalidationListener);
             markInvalid();
         }
     }
@@ -128,7 +146,7 @@ public abstract class _BindableAbstract<T> implements Bindable<T> {
     public void unbind() {
         if (observable != null) {
             value = observable.getValue();
-            observable.removeListener(listener);
+            observable.removeListener(invalidationListener);
             observable = null;
         }
     }

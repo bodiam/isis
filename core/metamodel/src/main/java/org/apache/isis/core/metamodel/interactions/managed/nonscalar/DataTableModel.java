@@ -19,6 +19,8 @@
 package org.apache.isis.core.metamodel.interactions.managed.nonscalar;
 
 import java.io.Serializable;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -44,9 +46,9 @@ import org.apache.isis.core.metamodel.interactions.managed.ManagedAction;
 import org.apache.isis.core.metamodel.interactions.managed.ManagedAction.MementoForArgs;
 import org.apache.isis.core.metamodel.interactions.managed.ManagedCollection;
 import org.apache.isis.core.metamodel.interactions.managed.ManagedMember;
-import org.apache.isis.core.metamodel.interactions.managed.ManagedMember.MemberType;
 import org.apache.isis.core.metamodel.interactions.managed.MultiselectChoices;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
+import org.apache.isis.core.metamodel.spec.ObjectSpecification;
 import org.apache.isis.core.metamodel.spec.PackedManagedObject;
 import org.apache.isis.core.metamodel.spec.feature.ObjectMember;
 
@@ -160,8 +162,23 @@ implements MultiselectChoices {
             .getFriendlyName());
     }
 
+    public int getElementCount() {
+        return dataRowsFiltered.getValue().size();
+    }
+
     public ObjectMember getMetaModel() {
         return managedMember.getMetaModel();
+    }
+
+    public ObjectSpecification getElementType() {
+        return getMetaModel().getElementType();
+    }
+
+    public Optional<DataRow> lookupDataRow(final @NonNull UUID uuid) {
+        //TODO can be safely cached
+        return getDataRowsFiltered().getValue().stream()
+                .filter(dr->dr.getUuid().equals(uuid))
+                .findFirst();
     }
 
     // -- TOGGLE ALL
@@ -199,7 +216,7 @@ implements MultiselectChoices {
 
     @Override
     public Can<ManagedObject> getSelected() {
-        return getDataRowsSelected()
+      return getDataRowsSelected()
                 .getValue()
                 .map(DataRow::getRowElement);
     }
@@ -247,13 +264,11 @@ implements MultiselectChoices {
 
             return new Memento(
                     managedMember.getIdentifier(),
-                    managedMember.getMemberType(),
                     table.where,
                     argsMemento);
         }
 
         private final Identifier featureId;
-        private final MemberType memberType;
         private final Where where;
         private final MementoForArgs argsMemento;
 
@@ -261,8 +276,7 @@ implements MultiselectChoices {
 
             val memberId = featureId.getMemberLogicalName();
 
-            if(memberType.isPropertyOrCollection()) {
-            //if(featureId.getType().isPropertyOrCollection()) {
+            if(featureId.getType().isPropertyOrCollection()) {
                 // bypass domain events
                 val collInteraction = CollectionInteraction.start(owner, memberId, where);
                 val managedColl = collInteraction.getManagedCollection().orElseThrow();
@@ -278,6 +292,5 @@ implements MultiselectChoices {
             return forAction(managedAction, args, actionResult);
         }
     }
-
 
 }

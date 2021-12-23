@@ -24,12 +24,12 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.apache.isis.client.kroviz.core.aggregator.ActionDispatcher
 import org.apache.isis.client.kroviz.core.aggregator.BaseAggregator
-import org.apache.isis.client.kroviz.to.HasLinks
+import org.apache.isis.client.kroviz.to.WithLinks
 import org.apache.isis.client.kroviz.to.Link
 import org.apache.isis.client.kroviz.to.Relation
 import org.apache.isis.client.kroviz.to.TransferObject
 import org.apache.isis.client.kroviz.ui.core.Constants
-import org.apache.isis.client.kroviz.ui.core.UiManager
+import org.apache.isis.client.kroviz.ui.core.ViewManager
 import org.w3c.files.Blob
 import kotlin.js.Date
 
@@ -173,8 +173,8 @@ data class LogEntry(
     }
 
     fun initType() {
-        if (obj != null && obj is HasLinks) {
-            val self = (obj as HasLinks).getLinks().firstOrNull() { it.relation() == Relation.SELF }
+        if (obj != null && obj is WithLinks) {
+            val self = (obj as WithLinks).getLinks().firstOrNull() { it.relation() == Relation.SELF }
             if (self != null) {
                 val t = self.type.removePrefix("application/json;profile=\"urn:org.restfulobjects:repr-types/")
                 type = t.removeSuffix("\"")
@@ -238,7 +238,7 @@ data class LogEntry(
 
     fun addAggregator(aggregator: BaseAggregator) {
         if (aggregator is ActionDispatcher) {
-            UiManager.setBusyCursor()
+            ViewManager.setBusyCursor()
         }
         aggregators.add(aggregator)
         nOfAggregators = aggregators.size
@@ -260,8 +260,8 @@ data class LogEntry(
     }
 
     fun getLinks(): List<Link> {
-        return if (obj is HasLinks) {
-            (obj as HasLinks).getLinks()
+        return if (obj is WithLinks) {
+            (obj as WithLinks).getLinks()
         } else {
             emptyList()
         }

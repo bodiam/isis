@@ -245,11 +245,12 @@ implements
                 .orElseGet(Can::empty);
 
         if(pendingArgs.getParamMetamodel(getParameterIndex()).isNonScalar()) {
-            val nonScalarDefaults = defaults
+            final Can<ManagedObject> nonScalarDefaults = defaults
             // post processing each entry
             .map(obj->ManagedObjects.emptyToDefault(paramSpec, !isOptional(), obj));
             // pack up
-            return ManagedObjects.pack(paramSpec, nonScalarDefaults);
+            val packed = ManagedObjects.pack(paramSpec, nonScalarDefaults);
+            return packed;
         }
 
         val scalarDefault = defaults.getFirst()

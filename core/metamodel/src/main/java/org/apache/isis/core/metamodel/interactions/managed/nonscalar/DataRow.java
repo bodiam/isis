@@ -23,13 +23,14 @@ import java.util.UUID;
 import org.apache.isis.commons.internal.binding._Bindables;
 import org.apache.isis.commons.internal.binding._Bindables.BooleanBindable;
 import org.apache.isis.core.metamodel.spec.ManagedObject;
+import org.apache.isis.core.metamodel.spec.ManagedObjects.EntityUtil;
 
 import lombok.Getter;
 
 public class DataRow {
 
     @Getter private final UUID uuid = UUID.randomUUID(); // in support of client side sorting
-    @Getter private final ManagedObject rowElement;
+    private final ManagedObject rowElement;
     @Getter private final BooleanBindable selectToggle;
 
     public DataRow(final DataTableModel parentTable, final ManagedObject rowElement) {
@@ -38,7 +39,7 @@ public class DataRow {
         selectToggle = _Bindables.forBoolean(false);
         selectToggle.addListener((e,o,n)->{
 
-            //_Debug.onSelectRowToggle(rowElement, o, n, parentTable.isToggleAllEvent.get());
+            //_ToggleDebug.onSelectRowToggle(rowElement, o, n, parentTable.isToggleAllEvent.get());
 
             if(parentTable.isToggleAllEvent.get()) {
                 return;
@@ -50,8 +51,12 @@ public class DataRow {
 
     }
 
+    public ManagedObject getRowElement() {
+        return EntityUtil.refetch(rowElement);
+    }
+
     public ManagedObject getCellElement(final DataColumn column) {
-        return column.getPropertyMetaModel().get(rowElement);
+        return column.getPropertyMetaModel().get(getRowElement());
     }
 
 }

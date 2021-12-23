@@ -201,18 +201,18 @@ public interface ManagedObject {
         ManagedObjects.assertPojoNotManaged(pojo);
         specification.assertPojoCompatible(pojo);
 
+        final ManagedObject adapter =
         //ISIS-2430 Cannot assume Action Param Spec to be correct when eagerly loaded
         //actual type in use (during runtime) might be a sub-class of the above
-        if(pojo==null
+        (pojo==null
                 || pojo.getClass().equals(specification.getCorrespondingClass())
-                || specification.isValue()) {
+                || specification.isValue())
             // if actual type matches spec's, we assume, that we don't need to reload,
             // so this is a shortcut for performance reasons
-            return SimpleManagedObject.of(specification, pojo);
-        }
+            ? SimpleManagedObject.of(specification, pojo)
+            : specification.getMetaModelContext().getObjectManager().adapt(pojo);
 
-        val objManager = specification.getMetaModelContext().getObjectManager();
-        return objManager.adapt(pojo);
+        return adapter;
     }
 
     /**

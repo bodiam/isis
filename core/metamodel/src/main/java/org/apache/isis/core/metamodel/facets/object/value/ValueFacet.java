@@ -25,6 +25,7 @@ import org.springframework.lang.Nullable;
 
 import org.apache.isis.applib.Identifier;
 import org.apache.isis.applib.id.LogicalType;
+import org.apache.isis.applib.value.semantics.DefaultsProvider;
 import org.apache.isis.applib.value.semantics.EncoderDecoder;
 import org.apache.isis.applib.value.semantics.OrderRelation;
 import org.apache.isis.applib.value.semantics.Parser;
@@ -50,6 +51,15 @@ public interface ValueFacet<T> extends Facet {
 
     LogicalType getValueType();
     Can<ValueSemanticsProvider<T>> getValueSemantics();
+
+//    /**
+//     *  There might be multiple {@link ValueSemanticsProvider}(s) registered for
+//     *  a specific value-type. However, there should be one primary, that is not qualified.
+//     *  Used eg. to provide encoding/decoding.
+//     */
+//    ValueSemanticsProvider<T> getPrimaryValueSemantics();
+
+
     Context createValueSemanticsContext(@Nullable ObjectFeature feature);
     <X> Stream<X> streamValueSemantics(Class<X> requiredType);
 
@@ -57,6 +67,11 @@ public interface ValueFacet<T> extends Facet {
 
     /** no qualifiers allowed on the default semantics provider*/
     Optional<OrderRelation<T, ?>> selectDefaultOrderRelation();
+
+    // -- DEFAULTS PROVIDER
+
+    /** no qualifiers allowed on the default semantics provider*/
+    Optional<DefaultsProvider<T>> selectDefaultDefaultsProvider();
 
     // -- ENCODER DECODER
 
