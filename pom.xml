@@ -155,6 +155,7 @@
 			<modules>
 				<module>examples/demo/javafx</module>
 				<!-- prerequisites ... -->
+				<module>examples/demo/domain</module>
 				<module>incubator/viewers/javafx</module>
 			</modules>
 		</profile>
@@ -171,6 +172,7 @@
 				<module>examples/demo/wicket/jdo</module>
 				<module>examples/demo/wicket/jpa</module>
 				<!-- prerequisites ... -->
+				<module>examples/demo/domain</module>
 				<module>examples/demo/web</module>
 			</modules>
 		</profile>
@@ -186,6 +188,7 @@
 			<modules>
 				<module>examples/demo/vaadin</module>
 				<!-- prerequisites ... -->
+				<module>examples/demo/domain</module>
 				<module>incubator/viewers/vaadin</module>
 				<module>examples/demo/web</module>
 				<module>examples/demo/wicket/common</module>
@@ -205,6 +208,18 @@
 				<module>incubator/clients/kroviz</module>
 				<module>incubator/viewers/javafx</module>
 				<module>incubator/viewers/vaadin</module>
+			</modules>
+		</profile>
+
+		<profile>
+			<id>module-incubator-graphql</id>
+			<activation>
+				<property>
+					<name>module-incubator-graphql</name>
+				</property>
+			</activation>
+			<modules>
+				<module>incubator/viewers/graphql</module>
 			</modules>
 		</profile>
 
