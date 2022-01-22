@@ -25,6 +25,10 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.ServletException;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.graphql.web.WebGraphQlHandler;
+import org.springframework.graphql.web.WebInput;
+import org.springframework.graphql.web.WebOutput;
+import org.springframework.graphql.web.webmvc.GraphQlHttpHandler;
 import org.springframework.stereotype.Service;
 
 import org.apache.isis.applib.annotation.PriorityPrecedence;
@@ -36,6 +40,8 @@ import org.apache.isis.core.webapp.modules.WebModuleContext;
 
 import lombok.Getter;
 import lombok.val;
+
+import reactor.core.publisher.Mono;
 
 /**
  * WebModule that provides the GraphQL Viewer.
@@ -71,6 +77,14 @@ public final class WebModuleGraphql extends WebModuleAbstract {
     @Override
     public void prepare(WebModuleContext ctx) {
         super.prepare(ctx);
+//        new GraphQlHttpHandler(new WebGraphQlHandler() {
+//            @Override
+//            public Mono<WebOutput> handleRequest(WebInput input) {
+//                return null;
+//            }
+//        });
+
+
     }
 
     @Override
