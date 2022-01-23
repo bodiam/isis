@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.isis.viewer.graphql.viewer.webmodule;
+package org.apache.isis.viewer.graphql.viewer.spring;
 
 import java.io.IOException;
 import java.util.ArrayList;

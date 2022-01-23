@@ -33,6 +33,8 @@ I find that IntelliJ can mess up with compiling applib as it depends on DTO clas
 
 * include `isis-parent`
 
+* include `mavendeps/webapp`
+
 * include `commons`
 
 * include all of `core`

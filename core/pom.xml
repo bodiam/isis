@@ -90,7 +90,7 @@
 		<assertj-guava.version>3.4.0</assertj-guava.version>
 
 		<camel.version>3.14.0</camel.version>
-		
+
 		<commons-email.version>1.5</commons-email.version>
 		<commons-httpclient.version>4.5.12</commons-httpclient.version>
 		<commons-io.version>2.11.0</commons-io.version>
@@ -836,6 +836,21 @@
 				<version>2.0.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
+				<groupId>org.apache.isis.incubator.viewer</groupId>
+				<artifactId>isis-viewer-graphql-applib</artifactId>
+				<version>2.0.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.isis.incubator.viewer</groupId>
+				<artifactId>isis-viewer-graphql-model</artifactId>
+				<version>2.0.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.isis.incubator.viewer</groupId>
+				<artifactId>isis-viewer-graphql-viewer</artifactId>
+				<version>2.0.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.isis.mavendeps</groupId>
 				<artifactId>isis-mavendeps-unittests</artifactId>
 				<version>2.0.0-SNAPSHOT</version>
@@ -855,13 +870,13 @@
 			</dependency>
 
 			<!-- THIRD PARTY DEPENDENCIES -->
-			
+
 			<dependency>
 				<groupId>org.ow2.asm</groupId>
 				<artifactId>asm</artifactId>
 				<version>${asm.version}</version>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>org.ow2.asm</groupId>
 				<artifactId>asm-util</artifactId>
@@ -1050,7 +1065,7 @@
 				<version>${javax-servlet.version}</version>
 			</dependency>
 
-			<!-- 3.2 not available yet, instead use org.datanucleus:javax.jdo 
+			<!-- 3.2 not available yet, instead use org.datanucleus:javax.jdo
 			<dependency>
 				<groupId>javax.jdo</groupId>
 				<artifactId>jdo-api</artifactId>
@@ -1407,7 +1422,7 @@
 				<artifactId>objenesis</artifactId>
 				<version>${objenesis.version}</version>
 			</dependency>
-			
+
 			<dependency>
 			    <groupId>org.osgi</groupId>
 			    <artifactId>osgi.core</artifactId>

@@ -33,6 +33,7 @@ import org.apache.isis.extensions.secman.encryption.spring.IsisModuleExtSecmanEn
 import org.apache.isis.extensions.secman.integration.IsisModuleExtSecmanIntegration;
 import org.apache.isis.extensions.viewer.wicket.exceldownload.ui.IsisModuleExtExcelDownloadUi;
 import org.apache.isis.testing.h2console.ui.IsisModuleTestingH2ConsoleUi;
+import org.apache.isis.viewer.graphql.viewer.IsisModuleIncViewerGraphqlViewer;
 import org.apache.isis.viewer.restfulobjects.jaxrsresteasy4.IsisModuleViewerRestfulObjectsJaxrsResteasy4;
 import org.apache.isis.viewer.restfulobjects.viewer.IsisModuleViewerRestfulObjectsViewer;
 
@@ -61,6 +62,9 @@ import demoapp.web.security.PrototypeActionsVisibilityAdvisor;
     // REST
     IsisModuleViewerRestfulObjectsViewer.class,
     IsisModuleViewerRestfulObjectsJaxrsResteasy4.class,
+
+    // GraphQL
+    IsisModuleIncViewerGraphqlViewer.class,
 
     // CORS
     IsisModuleExtCors.class,

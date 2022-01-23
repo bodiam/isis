@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.isis.viewer.graphql.viewer.webmodule;
+package org.apache.isis.viewer.graphql.viewer.spring;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ import org.springframework.graphql.execution.RuntimeWiringConfigurer;
  * @since 2.7.0
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnClass({ GraphQL.class, GraphQlSource.class })
+ @ConditionalOnClass({ GraphQL.class, GraphQlSource.class })
 @EnableConfigurationProperties(GraphQlProperties.class)
 public class GraphQlAutoConfiguration {
 
@@ -65,7 +65,7 @@ public class GraphQlAutoConfiguration {
 	private final BatchLoaderRegistry batchLoaderRegistry = new DefaultBatchLoaderRegistry();
 
 	@Bean
-	@ConditionalOnMissingBean
+	 @ConditionalOnMissingBean
 	public GraphQlSource graphQlSource(ResourcePatternResolver resourcePatternResolver, GraphQlProperties properties,
 			ObjectProvider<DataFetcherExceptionResolver> exceptionResolversProvider,
 			ObjectProvider<Instrumentation> instrumentationsProvider,
