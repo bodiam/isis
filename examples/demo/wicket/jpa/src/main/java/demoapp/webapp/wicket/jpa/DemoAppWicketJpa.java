@@ -33,7 +33,8 @@ import org.apache.isis.valuetypes.markdown.persistence.jpa.IsisModuleValMarkdown
 import org.apache.isis.valuetypes.markdown.ui.wkt.IsisModuleValMarkdownUiWkt;
 import org.apache.isis.valuetypes.sse.ui.wkt.IsisModuleValSseUiWkt;
 import org.apache.isis.viewer.wicket.viewer.IsisModuleViewerWicketViewer;
-import org.apache.isis.viewer.wicket.viewer.registries.components.ComponentFactoryRegistryDefault;
+
+import lombok.val;
 
 import demoapp.web.DemoAppManifestJpa;
 import demoapp.webapp.wicket.common.ui.DemoAppWicketCommon;
@@ -82,12 +83,16 @@ public class DemoAppWicketJpa extends SpringBootServletInitializer {
         //IsisPresets.logging(EntityModel.class, "debug");
         //IsisPresets.logging(FormExecutorDefault.class, "debug");
 
-        System.setProperty("spring.profiles.active", "demo-jpa");
+        System.setProperty("spring.profiles.active", preservingAnyExisting("demo-jpa"));
 
         SpringApplication.run(new Class[] { DemoAppWicketJpa.class }, args);
 
     }
 
+    private static String preservingAnyExisting(String profile) {
+        val existingProfiles = System.getProperty("spring.profiles.active");
+        return existingProfiles == null ? profile : existingProfiles + "," + profile;
+    }
 
 
 }

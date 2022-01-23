@@ -78,10 +78,15 @@ public class DemoAppWicketJdo extends SpringBootServletInitializer {
     	IsisPresets.prototyping();
         //IsisPresets.logging(WebRequestCycleForIsis.class, "debug");
 
-        System.setProperty("spring.profiles.active", "demo-jdo");
+        System.setProperty("spring.profiles.active", preservingAnyExisting("demo-jdo"));
 
         SpringApplication.run(new Class[] { DemoAppWicketJdo.class }, args);
 
+    }
+
+    private static String preservingAnyExisting(String profile) {
+        val existingProfiles = System.getProperty("spring.profiles.active");
+        return existingProfiles == null ? profile : existingProfiles + "," + profile;
     }
 
 }
