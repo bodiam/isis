@@ -119,13 +119,22 @@ public class GraphQlSourceForIsis implements GraphQlSource {
 
                         // as a first pass, expose a single "property" of the service, which is just a count of how
                         // many safe actions there are
+
+                        String fieldName = "numSafeActions";
+                        // {
+                        //    demo_SomeService {
+                        //      numSafeActions: Int!
+                        //    }
+                        // }
                         val serviceAsGraphQlType = newObject().name(logicalTypeNameSanitized)
                                 .field(newFieldDefinition()
-                                        .name("numSafeActions")
+                                        .name(fieldName)
                                         .type(Scalars.GraphQLInt)
                                         .build()).build();
+
+                        // corresponding data fetch
                         codeRegistryBuilder.dataFetcher(
-                                FieldCoordinates.coordinates(serviceAsGraphQlType, "numSafeActions"),
+                                FieldCoordinates.coordinates(serviceAsGraphQlType, fieldName),
                                 (DataFetcher<Object>) environment -> objectSpecification.streamRuntimeActions(MixedIn.INCLUDED)
                                         .map(ObjectAction.class::cast)
                                         .filter((ObjectAction x) -> x.containsFacet(ActionSemanticsFacet.class))
@@ -134,6 +143,9 @@ public class GraphQlSourceForIsis implements GraphQlSource {
                                         .count());
 
                         // make the service accessible from the top-level Query
+                        // query {
+                        //   demo_SomeService: demo_SomeService;
+                        // }
                         queryBuilder.field(newFieldDefinition().name(logicalTypeNameSanitized).type(serviceAsGraphQlType).build());
                         codeRegistryBuilder.dataFetcher(FieldCoordinates.coordinates("Query", newFieldDefinition().name(logicalTypeNameSanitized).type(serviceAsGraphQlType).build().getName()), (DataFetcher<Object>) environment -> service);
                     });
