@@ -4,6 +4,8 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
+import org.apache.isis.applib.services.iactnlayer.InteractionContext;
+import org.apache.isis.applib.services.user.UserMemento;
 import org.springframework.stereotype.Service;
 
 import org.apache.isis.applib.services.iactnlayer.InteractionService;
@@ -23,6 +25,9 @@ public class ExecutionStrategyResolvingWithinInteraction extends AsyncExecutionS
 
     @Override
     protected CompletableFuture<FieldValueInfo> resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+
+        // TODO: propagate identity from executionContext
+//        interactionService.openInteraction(InteractionContext.builder().user(UserMemento.builder().build()).build());
 
         interactionService.openInteraction();
         try {

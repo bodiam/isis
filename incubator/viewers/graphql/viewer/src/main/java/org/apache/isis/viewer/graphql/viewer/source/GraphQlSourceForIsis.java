@@ -1,11 +1,10 @@
 package org.apache.isis.viewer.graphql.viewer.source;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import org.springframework.graphql.execution.GraphQlSource;
-import org.springframework.stereotype.Service;
-
+import graphql.GraphQL;
+import graphql.Scalars;
+import graphql.schema.*;
+import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.apache.isis.applib.annotation.SemanticsOf;
 import org.apache.isis.applib.services.registry.ServiceRegistry;
 import org.apache.isis.core.config.IsisConfiguration;
@@ -14,19 +13,15 @@ import org.apache.isis.core.config.metamodel.specloader.IntrospectionMode;
 import org.apache.isis.core.metamodel.facets.actions.semantics.ActionSemanticsFacet;
 import org.apache.isis.core.metamodel.spec.feature.MixedIn;
 import org.apache.isis.core.metamodel.spec.feature.ObjectAction;
+import org.apache.isis.core.metamodel.spec.feature.ObjectFeature;
 import org.apache.isis.core.metamodel.specloader.SpecificationLoader;
+import org.springframework.graphql.execution.GraphQlSource;
+import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.val;
-
-import graphql.GraphQL;
-import graphql.Scalars;
-import graphql.execution.instrumentation.tracing.TracingInstrumentation;
-import graphql.schema.DataFetcher;
-import graphql.schema.FieldCoordinates;
-import graphql.schema.GraphQLCodeRegistry;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -53,7 +48,7 @@ public class GraphQlSourceForIsis implements GraphQlSource {
     @Override
     public GraphQL graphQl() {
         return GraphQL.newGraphQL(schema())
-                // .instrumentation(new TracingInstrumentation())
+//                .instrumentation(new TracingInstrumentation())
                 .queryExecutionStrategy(executionStrategy)
                 .build();
     }
@@ -62,43 +57,13 @@ public class GraphQlSourceForIsis implements GraphQlSource {
     public GraphQLSchema schema() {
 
         val fullyIntrospected = specificationLoader.isMetamodelFullyIntrospected();
-        if(!fullyIntrospected) {
+        if (!fullyIntrospected) {
             throw new IllegalStateException("Metamodel is not fully introspected");
         }
 
-//        // type LeaseRepository {
-//        //     numLeases: Int
-//        // }
-//        val leaseRepository_numLeases = GraphQLFieldDefinition.newFieldDefinition()
-//                .name("numLeases")
-//                .type(Scalars.GraphQLInt)
-//                .build();
-//        val leaseRepositoryType = GraphQLObjectType.newObject()
-//                .name("LeaseRepository")
-//                .field(leaseRepository_numLeases)
-//                .build();
-
-//        // type Query {
-//        //     leaseRepo: LeaseRepository
-//        // }
-//        val query_leaseRepo = GraphQLFieldDefinition.newFieldDefinition()
-//                .name("leaseRepo")
-//                .type(GraphQLTypeReference.typeRef(leaseRepositoryType.getName()))
-//                .build();
-//        GraphQLObjectType query = GraphQLObjectType.newObject()
-//                .name("Query")
-//                .field(query_leaseRepo)
-//                .build();
-//
-//        val codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-//                .dataFetcher(coordinates(query.getName(), query_leaseRepo.getName()),
-//                        (DataFetcher<Object>) environment -> leaseRepository)
-//                .dataFetcher(coordinates(leaseRepositoryType.getName(), leaseRepository_numLeases.getName()),
-//                        (DataFetcher<Object>) environment -> leaseRepository.numLeases)
-//                .build();
-
         val queryBuilder = newObject().name("Query");
         val codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry();
+
 
         specificationLoader.forEach(objectSpecification -> {
 
@@ -115,40 +80,67 @@ public class GraphQlSourceForIsis implements GraphQlSource {
 
                     serviceRegistry.lookupBeanById(logicalTypeName).ifPresent(service -> {
 
-                        String logicalTypeNameSanitized = logicalTypeName.replace('.', '_');
-
-                        // as a first pass, expose a single "property" of the service, which is just a count of how
-                        // many safe actions there are
-
-                        String fieldName = "numSafeActions";
-                        // {
-                        //    demo_SomeService {
-                        //      numSafeActions: Int!
-                        //    }
-                        // }
-                        val serviceAsGraphQlType = newObject().name(logicalTypeNameSanitized)
-                                .field(newFieldDefinition()
-                                        .name(fieldName)
-                                        .type(Scalars.GraphQLInt)
-                                        .build()).build();
-
-                        // corresponding data fetch
-                        codeRegistryBuilder.dataFetcher(
-                                FieldCoordinates.coordinates(serviceAsGraphQlType, fieldName),
-                                (DataFetcher<Object>) environment -> objectSpecification.streamRuntimeActions(MixedIn.INCLUDED)
+                                List<ObjectAction> objectActionList = objectSpecification.streamRuntimeActions(MixedIn.INCLUDED)
                                         .map(ObjectAction.class::cast)
                                         .filter((ObjectAction x) -> x.containsFacet(ActionSemanticsFacet.class))
-                                        .map(x -> x.getFacet(ActionSemanticsFacet.class))
-                                        .map(x -> x.value() == SemanticsOf.SAFE)
-                                        .count());
+                                        .filter(x -> x.getFacet(ActionSemanticsFacet.class).value() == SemanticsOf.SAFE)
+                                        .collect(Collectors.toList());
 
-                        // make the service accessible from the top-level Query
-                        // query {
-                        //   demo_SomeService: demo_SomeService;
-                        // }
-                        queryBuilder.field(newFieldDefinition().name(logicalTypeNameSanitized).type(serviceAsGraphQlType).build());
-                        codeRegistryBuilder.dataFetcher(FieldCoordinates.coordinates("Query", newFieldDefinition().name(logicalTypeNameSanitized).type(serviceAsGraphQlType).build().getName()), (DataFetcher<Object>) environment -> service);
-                    });
+                                // for now filters when no safe actions
+                                if (!objectActionList.isEmpty()) {
+
+                                    String logicalTypeNameSanitized = logicalTypeName.replace('.', '_');
+
+                                    val serviceAsGraphQlType = newObject().name(logicalTypeNameSanitized);
+
+                                    objectActionList
+                                            .forEach(objectAction -> {
+                                                String fieldName = objectAction.getId();
+
+                                                GraphQLFieldDefinition.Builder builder = newFieldDefinition().name(fieldName).type(Scalars.GraphQLString);
+                                                if (objectAction.getParameters().isNotEmpty()) {
+                                                    builder.arguments(objectAction.getParameters().stream().map(ObjectFeature::getId)
+                                                            .map(id -> GraphQLArgument.newArgument().name(id).type(Scalars.GraphQLString).build()).collect(Collectors.toList()));
+                                                }
+                                                serviceAsGraphQlType
+                                                        .field(builder
+                                                                .build());
+
+                                            });
+
+                                    GraphQLObjectType graphQLObjectType = serviceAsGraphQlType.build();
+
+                                    objectActionList
+                                            .forEach(objectAction -> {
+
+                                                String fieldName = objectAction.getId();
+                                                codeRegistryBuilder.dataFetcher(
+                                                        FieldCoordinates.coordinates(graphQLObjectType, fieldName),
+                                                        new DataFetcher<Object>() {
+
+                                                            @Override
+                                                            public Object get(DataFetchingEnvironment dataFetchingEnvironment) throws Exception {
+
+                                                                // objectAction.execute()
+
+                                                                return "TODO - " + fieldName;
+                                                            }
+
+                                                        });
+
+                                            });
+                                    // corresponding data fetch
+
+                                    // make the service accessible from the top-level Query
+                                    // query {
+                                    //   demo_SomeService: demo_SomeService;
+                                    // }
+                                    queryBuilder.field(newFieldDefinition().name(logicalTypeNameSanitized).type(serviceAsGraphQlType).build());
+                                    codeRegistryBuilder.dataFetcher(FieldCoordinates.coordinates("Query", newFieldDefinition().name(logicalTypeNameSanitized).type(serviceAsGraphQlType).build().getName()), (DataFetcher<Object>) environment -> service);
+                                }
+                            }
+
+                    );
                     break;
 
                 case MANAGED_BEAN_NOT_CONTRIBUTING: // a @Service or @Component ... ignore
@@ -161,6 +153,7 @@ public class GraphQlSourceForIsis implements GraphQlSource {
                     break;
             }
         }, false);
+
 
         // type Query {
         //     numServices: Int
@@ -176,13 +169,12 @@ public class GraphQlSourceForIsis implements GraphQlSource {
 
 
         val codeRegistry = codeRegistryBuilder
-        .dataFetcher(coordinates(query.getName(), query_numServices.getName()),
-                (DataFetcher<Object>) environment -> this.serviceRegistry.streamRegisteredBeans().count())
-        .build();
+                .dataFetcher(coordinates(query.getName(), query_numServices.getName()),
+                        (DataFetcher<Object>) environment -> this.serviceRegistry.streamRegisteredBeans().count())
+                .build();
 
         return GraphQLSchema.newSchema()
                 .query(query)
-                // .additionalType(leaseRepositoryType)
                 .codeRegistry(codeRegistry)
                 .build();
     }

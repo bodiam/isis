@@ -10,12 +10,10 @@ import org.apache.isis.viewer.graphql.viewer.spring.GraphQlAutoConfiguration;
 import org.apache.isis.viewer.graphql.viewer.spring.GraphQlCorsProperties;
 import org.apache.isis.viewer.graphql.viewer.spring.GraphQlProperties;
 import org.apache.isis.viewer.graphql.viewer.spring.GraphQlWebMvcAutoConfiguration;
-import org.apache.isis.viewer.graphql.viewer.webmodule.WebModuleGraphql;
 
 @Configuration
 @Import({
         // @Service's
-        WebModuleGraphql.class,
 
         // modules
         IsisModuleIncViewerGraphqlModel.class,
