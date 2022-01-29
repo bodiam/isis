@@ -75,6 +75,8 @@ public class GraphQlSourceForIsis implements GraphQlSource {
                     break;
                 case ENTITY:    // @DomainObject(nature=ENTITY)
                     // TODO
+
+
                     break;
                 case MANAGED_BEAN_CONTRIBUTING: //@DomainService
 
@@ -97,10 +99,17 @@ public class GraphQlSourceForIsis implements GraphQlSource {
                                             .forEach(objectAction -> {
                                                 String fieldName = objectAction.getId();
 
-                                                GraphQLFieldDefinition.Builder builder = newFieldDefinition().name(fieldName).type(Scalars.GraphQLString);
+
+                                                GraphQLFieldDefinition.Builder builder = newFieldDefinition()
+                                                        .name(fieldName)
+                                                        .type(TypeMapper.outputTypeFor(objectAction));
                                                 if (objectAction.getParameters().isNotEmpty()) {
-                                                    builder.arguments(objectAction.getParameters().stream().map(ObjectFeature::getId)
-                                                            .map(id -> GraphQLArgument.newArgument().name(id).type(Scalars.GraphQLString).build()).collect(Collectors.toList()));
+                                                    builder.arguments(objectAction.getParameters().stream()
+                                                            .map(objectActionParameter -> GraphQLArgument.newArgument()
+                                                                    .name(objectActionParameter.getId())
+                                                                    .type(TypeMapper.inputTypeFor(objectActionParameter))
+                                                                    .build())
+                                                            .collect(Collectors.toList()));
                                                 }
                                                 serviceAsGraphQlType
                                                         .field(builder
